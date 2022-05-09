@@ -4,6 +4,7 @@ import 'package:archive/archive.dart';
 import 'dart:convert' as convert;
 import 'package:collection/collection.dart' show IterableExtension;
 import 'package:quiver/core.dart';
+import 'package:path/path.dart' as path;
 
 import '../entities/epub_content_type.dart';
 import '../utils/zip_path_utils.dart';
@@ -39,6 +40,7 @@ abstract class EpubContentFileRef {
   ArchiveFile getContentFileEntry() {
     var contentFilePath = ZipPathUtils.combine(
         epubBookRef.Schema!.ContentDirectoryPath, FileName);
+    contentFilePath = path.normalize(contentFilePath!);
     var contentFileEntry = epubBookRef.EpubArchive()!
         .files
         .firstWhereOrNull((ArchiveFile x) => x.name == contentFilePath);
