@@ -158,10 +158,14 @@ class NavigationReader {
             'EPUB parsing error: TOC file $_tocFileEntryPath not found in archive.');
       }
       //Get relative toc file path
-      _tocFileEntryPath = ((_tocFileEntryPath!.split('/')..removeLast())
-                ..removeAt(0))
-              .join('/') +
-          '/';
+      if (_tocFileEntryPath!.contains('/')) {
+        _tocFileEntryPath = ((_tocFileEntryPath!.split('/')..removeLast())
+                  ..removeAt(0))
+                .join('/') +
+            '/';
+      } else {
+        _tocFileEntryPath = '';
+      }
 
       var containerDocument =
           xml.XmlDocument.parse(convert.utf8.decode(tocFileEntry.content));
