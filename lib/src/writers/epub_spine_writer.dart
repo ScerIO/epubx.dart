@@ -8,7 +8,7 @@ class EpubSpineWriter {
       spine.Items!.forEach((spineitem) => builder.element('itemref',
               attributes: {
                 'idref': spineitem.IdRef!,
-                'linear': spineitem.IsLinear! ? 'no' : 'yes'
+                'linear': spineitem.IsLinear! ? 'yes' : 'no'
               }));
     });
   }
