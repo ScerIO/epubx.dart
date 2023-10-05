@@ -6,6 +6,29 @@ import '../ref_entities/epub_content_ref.dart';
 import '../ref_entities/epub_text_content_file_ref.dart';
 import '../schema/opf/epub_manifest_item.dart';
 
+//Accented characters throw a Invalid argument(s): Illegal percent encoding in URI on Uri.decodeFull. 
+//By checking if it throws an error and returning the filename again if so, you can use accented chars in
+//epub internal filenames. 
+String accentedFileChecker(String incomingFileName) {
+  bool errorThrown = false;
+  String fileName = '';
+  String decodedFileName = '';
+
+  try {
+    decodedFileName = Uri.decodeFull(incomingFileName);
+  } catch (e) {
+    errorThrown = true;
+  } finally {
+    if (errorThrown) {
+      fileName = incomingFileName;
+    } else {
+      fileName = decodedFileName;
+    }
+  }
+  return fileName;
+}
+//////
+
 class ContentReader {
   static EpubContentRef parseContentMap(EpubBookRef bookRef) {
     var result = EpubContentRef();
@@ -30,7 +53,7 @@ class ContentReader {
         case EpubContentType.DTBOOK_NCX:
           var epubTextContentFile = EpubTextContentFileRef(bookRef);
           {
-            epubTextContentFile.FileName = Uri.decodeFull(fileName!);
+            epubTextContentFile.FileName = accentedFileChecker(fileName!);
             epubTextContentFile.ContentMimeType = contentMimeType;
             epubTextContentFile.ContentType = contentType;
           }
@@ -62,7 +85,7 @@ class ContentReader {
         default:
           var epubByteContentFile = EpubByteContentFileRef(bookRef);
           {
-            epubByteContentFile.FileName = Uri.decodeFull(fileName!);
+            epubByteContentFile.FileName = accentedFileChecker(fileName!);
             epubByteContentFile.ContentMimeType = contentMimeType;
             epubByteContentFile.ContentType = contentType;
           }

@@ -3,6 +3,8 @@ import '../ref_entities/epub_chapter_ref.dart';
 import '../ref_entities/epub_text_content_file_ref.dart';
 import '../schema/navigation/epub_navigation_point.dart';
 
+import 'content_reader.dart';
+
 class ChapterReader {
   static List<EpubChapterRef> getChapters(EpubBookRef bookRef) {
     if (bookRef.Schema!.Navigation == null) {
@@ -16,10 +18,10 @@ class ChapterReader {
       EpubBookRef bookRef, List<EpubNavigationPoint> navigationPoints) {
     var result = <EpubChapterRef>[];
     // navigationPoints.forEach((EpubNavigationPoint navigationPoint) {
-    for (var navigationPoint in navigationPoints){
+    for (var navigationPoint in navigationPoints) {
       String? contentFileName;
       String? anchor;
-      if (navigationPoint.Content?.Source ==null) continue;
+      if (navigationPoint.Content?.Source == null) continue;
       var contentSourceAnchorCharIndex =
           navigationPoint.Content!.Source!.indexOf('#');
       if (contentSourceAnchorCharIndex == -1) {
@@ -31,7 +33,7 @@ class ChapterReader {
         anchor = navigationPoint.Content!.Source!
             .substring(contentSourceAnchorCharIndex + 1);
       }
-      contentFileName = Uri.decodeFull(contentFileName!);
+      contentFileName = accentedFileChecker(contentFileName!);
       EpubTextContentFileRef? htmlContentFileRef;
       if (!bookRef.Content!.Html!.containsKey(contentFileName)) {
         throw Exception(
@@ -47,7 +49,8 @@ class ChapterReader {
           getChaptersImpl(bookRef, navigationPoint.ChildNavigationPoints!);
 
       result.add(chapterRef);
-    };
+    }
+    ;
     return result;
   }
 }
