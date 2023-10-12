@@ -30,7 +30,8 @@ class ContentReader {
         case EpubContentType.DTBOOK_NCX:
           var epubTextContentFile = EpubTextContentFileRef(bookRef);
           {
-            epubTextContentFile.FileName = Uri.decodeFull(fileName!);
+            epubTextContentFile.FileName =
+                Uri.decodeFull(Uri.encodeComponent(fileName!));
             epubTextContentFile.ContentMimeType = contentMimeType;
             epubTextContentFile.ContentType = contentType;
           }
@@ -62,7 +63,8 @@ class ContentReader {
         default:
           var epubByteContentFile = EpubByteContentFileRef(bookRef);
           {
-            epubByteContentFile.FileName = Uri.decodeFull(fileName!);
+            epubByteContentFile.FileName =
+                Uri.decodeFull(Uri.encodeComponent(fileName!));
             epubByteContentFile.ContentMimeType = contentMimeType;
             epubByteContentFile.ContentType = contentType;
           }
