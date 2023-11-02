@@ -17,7 +17,9 @@ class BookNotesReader {
     final note = bookRef.Content?.AllFiles?[noteManifestItem.Href];
     final noteText = note as EpubTextContentFileRef;
     final epubChapter = EpubChapterRef(noteText);
-
-    return epubChapter;
+    epubChapter.ContentFileName = noteText.FileName;
+    epubChapter.Title = noteManifestItem.Href;
+    final result = await EpubReader.readChapters([epubChapter]);
+    return result.first;
   }
 }
