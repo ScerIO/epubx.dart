@@ -2,6 +2,7 @@ import 'dart:async';
 
 import 'package:collection/collection.dart' show IterableExtension;
 import 'package:epubx/epubx.dart';
+import 'package:epubx/src/ref_entities/epub_text_content_file_ref.dart';
 
 class BookNotesReader {
   static Future<dynamic> readBookNotes(EpubBookRef bookRef) async {
@@ -14,8 +15,9 @@ class BookNotesReader {
     }
 
     final note = bookRef.Content?.AllFiles?[noteManifestItem.Href];
-    final string = await note?.readContentAsText();
+    final noteText = note as EpubTextContentFileRef;
+    final epubChapter = EpubChapterRef(noteText);
 
-    return note;
+    return epubChapter;
   }
 }
