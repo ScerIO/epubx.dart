@@ -28,11 +28,13 @@ class BookAllChaptersReader {
                 (element.FileName?.endsWith('html') == true ||
                     element.FileName?.endsWith('xml') == true),
           )
-          .toList() as List<EpubTextContentFileRef>;
-      final allChapterRefs =
-          allFiles.map((e) => EpubChapterRef(e)..Title = e.FileName).toList();
+          .toList();
+      final allChapterRefs = allFiles
+          ?.map((e) =>
+              EpubChapterRef(e as EpubTextContentFileRef)..Title = e.FileName)
+          .toList();
 
-      final allChapters = EpubReader.readChapters(allChapterRefs);
+      final allChapters = EpubReader.readChapters(allChapterRefs ?? []);
 
       return allChapters;
     } catch (e) {
