@@ -48,6 +48,7 @@ abstract class EpubContentFileRef {
   }
 
   ArchiveFile? findArchiveFileByName(List<ArchiveFile> files, String name) {
+    name = Uri.decodeFull(Uri.encodeComponent(name));
     ArchiveFile? maybe1File;
     ArchiveFile? maybe2File;
     for (var file in files) {
