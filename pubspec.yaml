@@ -14,9 +14,7 @@ dependencies:
   xml: ^6.0.1
   image: ^3.0.8
   collection: ^1.15.0
-  latin_crillic: ^0.0.6
-  intl: ^0.18.1
-  diacritic: ^0.1.4
+
 
 dev_dependencies:
   test: ^1.16.7
