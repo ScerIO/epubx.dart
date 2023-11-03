@@ -127,7 +127,7 @@ class EpubReader {
       final chapter = allChapters[i];
       notesHtml = '$notesHtml\n${chapter.HtmlContent}';
     }
-    notesHtml = '$notesHtml\n${firstNotes ?? ""}';
+    notesHtml = '$notesHtml\n${firstNotes?.HtmlContent ?? ""}';
 
     final notesChapter = EpubChapter();
     notesChapter.HtmlContent = notesHtml;
