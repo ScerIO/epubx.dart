@@ -21,13 +21,10 @@ class BookAllChaptersReader {
       epubChapter.Title = '\$notes-found-in-directory\$';
       final result = await EpubReader.readChapters([epubChapter]);
       return result.first;*/
-      final allFiles = bookRef.Content?.AllFiles?.values.where((element) {
-        print(1);
-        return element is EpubTextContentFile;
-      }).toList();
-      final allChapterRefs = allFiles
-          ?.map((e) => EpubChapterRef(e as EpubTextContentFileRef))
+      final allFiles = bookRef.Content?.AllFiles?.values
+          .whereType<EpubTextContentFileRef>()
           .toList();
+      final allChapterRefs = allFiles?.map((e) => EpubChapterRef(e)).toList();
 
       final allChapters = EpubReader.readChapters(allChapterRefs ?? []);
 
