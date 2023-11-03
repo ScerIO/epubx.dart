@@ -19,7 +19,7 @@ class BookNotesReader {
       final noteText = note as EpubTextContentFileRef;
       final epubChapter = EpubChapterRef(noteText);
       epubChapter.ContentFileName = noteText.FileName;
-      epubChapter.Title = noteManifestItem.Href;
+      epubChapter.Title = '\$notes-found-in-directory\$';
       final result = await EpubReader.readChapters([epubChapter]);
       return result.first;
     } catch (e) {
