@@ -59,7 +59,7 @@ class EpubBookRef {
     return await BookCoverReader.readBookCover(this);
   }
 
-  Future<EpubChapter> readNotes() async {
+  Future<EpubChapter?> readNotes() async {
     return await BookNotesReader.readBookNotes(this);
   }
 }

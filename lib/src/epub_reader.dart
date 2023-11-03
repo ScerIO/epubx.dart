@@ -91,8 +91,11 @@ class EpubReader {
     result.CoverImage = await epubBookRef.readCover();
     var chapterRefs = await epubBookRef.getChapters();
     result.Chapters = await readChapters(chapterRefs);
+
     final notes = await epubBookRef.readNotes();
-    result.Chapters?.add(notes);
+    if (notes != null) {
+      result.Chapters?.add(notes);
+    }
     return result;
   }
 
