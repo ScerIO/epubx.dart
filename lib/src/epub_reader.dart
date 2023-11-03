@@ -127,7 +127,10 @@ class EpubReader {
       final chapter = allChapters[i];
       notesHtml = '$notesHtml\n${chapter.HtmlContent}';
     } */
-    notesHtml = '$notesHtml\n${firstNotes?.HtmlContent ?? ""}';
+
+    notesHtml = notesHtml.isEmpty
+        ? firstNotes?.HtmlContent ?? ''
+        : '$notesHtml\n${firstNotes?.HtmlContent ?? ""}';
 
     if (notesHtml.isNotEmpty) {
       final notesChapter = EpubChapter();
