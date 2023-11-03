@@ -38,9 +38,10 @@ abstract class EpubContentFileRef {
   ArchiveFile getContentFileEntry() {
     var contentFilePath = ZipPathUtils.combine(
         epubBookRef.Schema!.ContentDirectoryPath, FileName);
-    var contentFileEntry = epubBookRef.EpubArchive()!
-        .files
-        .firstWhereOrNull((ArchiveFile x) => x.name == contentFilePath);
+    var contentFileEntry = epubBookRef.EpubArchive()!.files.firstWhereOrNull(
+        (ArchiveFile x) =>
+            x.name.contains(contentFilePath ?? 'null+not-exist') ||
+            contentFilePath?.contains(x.name) == true);
     if (contentFileEntry == null) {
       throw Exception(
           'EPUB parsing error: file $contentFilePath not found in archive.');
