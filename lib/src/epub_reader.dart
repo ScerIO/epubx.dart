@@ -101,6 +101,7 @@ class EpubReader {
       List<EpubChapter> realChapters, List<EpubChapter> allChapters) {
     final mixedList = <EpubChapter>[];
     var notesHtml = '';
+    EpubChapter? firstNotes;
     final realHtmls = realChapters.map((e) => e.HtmlContent);
     final lastChapterIndex = allChapters
         .lastIndexWhere((element) => realHtmls.contains(element.HtmlContent));
@@ -114,13 +115,19 @@ class EpubReader {
       if (realChapter.Title != 'FakeChapter') {
         mixedList.add(realChapter);
       } else {
-        mixedList.add(chapter);
+        if (chapter.ContentFileName?.contains('note') == true) {
+          firstNotes = chapter;
+        } else {
+          mixedList.add(chapter);
+        }
       }
     }
+
     for (var i = lastChapterIndex + 1; i < allChapters.length; i++) {
       final chapter = allChapters[i];
       notesHtml = '$notesHtml\n${chapter.HtmlContent}';
     }
+    notesHtml = '$notesHtml\n${firstNotes ?? ""}';
 
     final notesChapter = EpubChapter();
     notesChapter.HtmlContent = notesHtml;
