@@ -92,9 +92,14 @@ class EpubReader {
     var chapterRefs = await epubBookRef.getChapters();
     result.Chapters = await readChapters(chapterRefs);
 
-    final notes = await epubBookRef.readNotes();
-    if (notes != null) {
-      result.Chapters?.add(notes);
+    if (result.Chapters?.any(
+            (element) => element.ContentFileName?.contains('note') == true) ??
+        false) {
+    } else {
+      final notes = await epubBookRef.readNotes();
+      if (notes != null) {
+        result.Chapters?.add(notes);
+      }
     }
     return result;
   }
