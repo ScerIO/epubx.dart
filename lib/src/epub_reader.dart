@@ -123,10 +123,10 @@ class EpubReader {
       }
     }
 
-    for (var i = lastChapterIndex + 1; i < allChapters.length; i++) {
+    /*  for (var i = lastChapterIndex + 1; i < allChapters.length; i++) {
       final chapter = allChapters[i];
       notesHtml = '$notesHtml\n${chapter.HtmlContent}';
-    }
+    } */
     notesHtml = '$notesHtml\n${firstNotes?.HtmlContent ?? ""}';
 
     final notesChapter = EpubChapter();
