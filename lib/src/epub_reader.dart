@@ -118,7 +118,7 @@ class EpubReader {
         if (chapter.ContentFileName?.contains('note') == true) {
           firstNotes = chapter;
         } else {
-          mixedList.add(chapter);
+          //   mixedList.add(chapter);
         }
       }
     }
