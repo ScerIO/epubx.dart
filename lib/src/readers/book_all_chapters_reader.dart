@@ -22,11 +22,17 @@ class BookAllChaptersReader {
       final result = await EpubReader.readChapters([epubChapter]);
       return result.first;*/
       final allFiles = bookRef.Content?.AllFiles?.values
-          .whereType<EpubTextContentFileRef>()
-          .toList();
-      final allChapterRefs = allFiles?.map((e) => EpubChapterRef(e)).toList();
+          .where(
+            (element) =>
+                element is EpubTextContentFileRef &&
+                (element.FileName?.endsWith('html') == true ||
+                    element.FileName?.endsWith('xml') == true),
+          )
+          .toList() as List<EpubTextContentFileRef>;
+      final allChapterRefs =
+          allFiles.map((e) => EpubChapterRef(e)..Title = e.FileName).toList();
 
-      final allChapters = EpubReader.readChapters(allChapterRefs ?? []);
+      final allChapters = EpubReader.readChapters(allChapterRefs);
 
       return allChapters;
     } catch (e) {

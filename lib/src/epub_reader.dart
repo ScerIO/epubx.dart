@@ -93,8 +93,33 @@ class EpubReader {
     result.Chapters = await readChapters(chapterRefs);
 
     final allChapters = await epubBookRef.getAllChapters();
-    result.Chapters = allChapters;
+    result.Chapters = mixChapters(result.Chapters ?? [], allChapters);
     return result;
+  }
+
+  static List<EpubChapter> mixChapters(
+      List<EpubChapter> realChapters, List<EpubChapter> allChapters) {
+    final mixedList = <EpubChapter>[];
+    var notesHtml = '';
+    allChapters.forEach((chapter) {
+      final realChapter = realChapters.firstWhere(
+        (element) => element.HtmlContent == chapter.HtmlContent,
+        orElse: () => EpubChapter()..Title = 'FakeChapter',
+      );
+
+      if (realChapter.Title != 'FakeChapter') {
+        mixedList.add(realChapter);
+      } else {
+        notesHtml += chapter.HtmlContent ?? '';
+      }
+    });
+    final notesChapter = EpubChapter();
+    notesChapter.HtmlContent = notesHtml;
+    notesChapter.Title = '\$notes-found-in-directory\$';
+    notesChapter.ContentFileName = 'notes';
+    mixedList.add(notesChapter);
+
+    return mixedList;
   }
 
   static Future<EpubContent> readContent(EpubContentRef contentRef) async {
