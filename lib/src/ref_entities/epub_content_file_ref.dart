@@ -48,21 +48,31 @@ abstract class EpubContentFileRef {
   }
 
   ArchiveFile? findArchiveFileByName(List<ArchiveFile> files, String name) {
-    name = Uri.decodeFull(Uri.encodeComponent(name));
+    name = normalizeString(name);
     ArchiveFile? maybe1File;
     ArchiveFile? maybe2File;
     for (var file in files) {
-      if (file.name == name) {
+      final fileName = normalizeString(file.name);
+      if (fileName == name) {
         return file;
       }
-      if (file.name.contains(name)) {
+      if (fileName.contains(name)) {
         maybe1File = file;
       }
-      if (name.contains(file.name)) {
+      if (name.contains(fileName)) {
         maybe2File = file;
       }
     }
     return maybe1File ?? maybe2File;
+  }
+
+  static String normalizeString(String s) {
+    try {
+      s = Uri.decodeFull(s);
+    } catch (_) {}
+    ;
+    s = s.replaceAll('й', 'й');
+    return s;
   }
 
   List<int> getContentStream() {
