@@ -100,8 +100,12 @@ class EpubReader {
   static List<EpubChapter> mixChapters(
       List<EpubChapter> realChapters, List<EpubChapter> allChapters) {
     final mixedList = <EpubChapter>[];
-    //  var notesHtml = '';
-    allChapters.forEach((chapter) {
+    var notesHtml = '';
+    final realHtmls = realChapters.map((e) => e.HtmlContent);
+    final lastChapterIndex = allChapters
+        .lastIndexWhere((element) => realHtmls.contains(element.HtmlContent));
+    for (var i = 0; i <= lastChapterIndex; i++) {
+      final chapter = allChapters[i];
       final realChapter = realChapters.firstWhere(
         (element) => element.HtmlContent == chapter.HtmlContent,
         orElse: () => EpubChapter()..Title = 'FakeChapter',
@@ -110,19 +114,20 @@ class EpubReader {
       if (realChapter.Title != 'FakeChapter') {
         mixedList.add(realChapter);
       } else {
-        if (chapter.ContentFileName?.contains('note') == true) {
-          chapter.Title = '\$notes-found-in-directory\$';
-        }
         mixedList.add(chapter);
       }
-    });
-    /* if (notesHtml.isNotEmpty) {
-      final notesChapter = EpubChapter();
-      notesChapter.HtmlContent = notesHtml;
-      notesChapter.Title = '\$notes-found-in-directory\$';
-      notesChapter.ContentFileName = 'notes';
-      mixedList.add(notesChapter);
-    } */
+    }
+    for (var i = lastChapterIndex + 1; i < allChapters.length; i++) {
+      final chapter = allChapters[i];
+      notesHtml = '$notesHtml\n${chapter.HtmlContent}';
+    }
+
+    final notesChapter = EpubChapter();
+    notesChapter.HtmlContent = notesHtml;
+    notesChapter.Title = '\$notes-found-in-directory\$';
+    notesChapter.ContentFileName = 'notes';
+
+    mixedList.add(notesChapter);
 
     return mixedList;
   }
