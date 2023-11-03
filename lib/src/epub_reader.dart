@@ -129,12 +129,14 @@ class EpubReader {
     } */
     notesHtml = '$notesHtml\n${firstNotes?.HtmlContent ?? ""}';
 
-    final notesChapter = EpubChapter();
-    notesChapter.HtmlContent = notesHtml;
-    notesChapter.Title = '\$notes-found-in-directory\$';
-    notesChapter.ContentFileName = 'notes';
+    if (notesHtml.isNotEmpty) {
+      final notesChapter = EpubChapter();
+      notesChapter.HtmlContent = notesHtml;
+      notesChapter.Title = '\$notes-found-in-directory\$';
+      notesChapter.ContentFileName = 'notes';
 
-    mixedList.add(notesChapter);
+      mixedList.add(notesChapter);
+    }
 
     return mixedList;
   }
