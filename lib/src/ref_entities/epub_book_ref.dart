@@ -2,7 +2,7 @@ import 'dart:async';
 
 import 'package:archive/archive.dart';
 import 'package:epubx/epubx.dart';
-import 'package:epubx/src/readers/book_notes_reader.dart';
+import 'package:epubx/src/readers/book_all_chapters_reader.dart';
 import 'package:quiver/collection.dart' as collections;
 import 'package:quiver/core.dart';
 
@@ -59,7 +59,7 @@ class EpubBookRef {
     return await BookCoverReader.readBookCover(this);
   }
 
-  Future<EpubChapter?> readNotes() async {
-    return await BookNotesReader.readBookNotes(this);
+  Future<List<EpubChapter>> getAllChapters() async {
+    return await BookAllChaptersReader.readAllChapters(this);
   }
 }

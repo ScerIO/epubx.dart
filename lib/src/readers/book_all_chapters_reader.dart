@@ -1,13 +1,12 @@
 import 'dart:async';
 
-import 'package:collection/collection.dart' show IterableExtension;
 import 'package:epubx/epubx.dart';
 import 'package:epubx/src/ref_entities/epub_text_content_file_ref.dart';
 
-class BookNotesReader {
-  static Future<EpubChapter?> readBookNotes(EpubBookRef bookRef) async {
+class BookAllChaptersReader {
+  static Future<List<EpubChapter>> readAllChapters(EpubBookRef bookRef) async {
     try {
-      var noteManifestItem = bookRef.Schema!.Package!.Manifest!.Items!
+      /*  var noteManifestItem = bookRef.Schema!.Package!.Manifest!.Items!
           .firstWhereOrNull((EpubManifestItem manifestItem) =>
               manifestItem.Id!.toLowerCase().contains('note'));
       if (noteManifestItem == null) {
@@ -21,10 +20,19 @@ class BookNotesReader {
       epubChapter.ContentFileName = noteText.FileName;
       epubChapter.Title = '\$notes-found-in-directory\$';
       final result = await EpubReader.readChapters([epubChapter]);
-      return result.first;
+      return result.first;*/
+      final allFiles =
+          bookRef.Content?.AllFiles?.values.whereType<EpubTextContentFile>();
+      final allChapterRefs = allFiles
+          ?.map((e) => EpubChapterRef(e as EpubTextContentFileRef))
+          .toList();
+
+      final allChapters = EpubReader.readChapters(allChapterRefs ?? []);
+
+      return allChapters;
     } catch (e) {
       print(e);
-      return null;
+      return [];
     }
   }
 }
