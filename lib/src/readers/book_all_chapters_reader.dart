@@ -30,8 +30,11 @@ class BookAllChaptersReader {
           )
           .toList();
       final allChapterRefs = allFiles
-          ?.map((e) =>
-              EpubChapterRef(e as EpubTextContentFileRef)..Title = e.FileName)
+          ?.map(
+            (e) => EpubChapterRef(e as EpubTextContentFileRef)
+              ..Title = e.FileName
+              ..ContentFileName = e.FileName,
+          )
           .toList();
 
       final allChapters = await EpubReader.readChapters(allChapterRefs ?? []);
