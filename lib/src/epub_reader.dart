@@ -93,7 +93,8 @@ class EpubReader {
     result.Chapters = await readChapters(chapterRefs);
 
     final allChapters = await epubBookRef.getAllChapters();
-    result.Chapters = mixChapters(result.Chapters ?? [], allChapters);
+    result.Chapters =
+        true ? allChapters : mixChapters(result.Chapters ?? [], allChapters);
     return result;
   }
 
