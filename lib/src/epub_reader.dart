@@ -111,13 +111,13 @@ class EpubReader {
 
     final realHtmls = realChapters.map((e) => e.HtmlContent);
     final realNames = realChapters.map((e) => e.ContentFileName);
-    final lastChapterIndex = allChapters
-        .lastIndexWhere((element) => realHtmls.contains(element.HtmlContent));
+    final firstChapterIndex = allChapters
+        .indexWhere((element) => realHtmls.contains(element.HtmlContent));
     final manifestItems = ref.Schema?.Package?.Manifest?.Items;
 
     if (manifestItems != null) {
-      final lastChapterManifest = manifestItems
-          .lastIndexWhere((element) => realNames.contains(element.Href));
+      final firstChapterManifestIndex = manifestItems
+          .indexWhere((element) => realNames.contains(element.Href));
       for (var i = 0; i < manifestItems.length; i++) {
         final manifestItem = manifestItems[i];
         if (manifestItem.Href?.endsWith('html') == true ||
@@ -135,7 +135,7 @@ class EpubReader {
               orElse: () => EpubChapter()..Title = 'Fake1 | 9Title',
             );
             if (chapter.Title != 'Fake1 | 9Title') {
-              if (i < lastChapterManifest) {
+              if (i < firstChapterManifestIndex) {
                 beginChapters.add(chapter);
               } else {
                 notesChapters.add(chapter);
@@ -151,7 +151,7 @@ class EpubReader {
           notesChapters.contains(chapter) ||
           realHtmls.contains(chapter.HtmlContent)) {
       } else {
-        if (i < lastChapterIndex) {
+        if (i < firstChapterIndex) {
           beginChapters.add(chapter);
         } else {
           notesChapters.add(chapter);
