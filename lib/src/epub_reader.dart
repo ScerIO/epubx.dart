@@ -93,35 +93,69 @@ class EpubReader {
     result.Chapters = await readChapters(chapterRefs);
 
     final allChapters = await epubBookRef.getAllChapters();
-    result.Chapters =
-        true ? allChapters : mixChapters(result.Chapters ?? [], allChapters);
+    result.Chapters = mixChapters(
+      result.Chapters ?? [],
+      allChapters,
+      epubBookRef,
+    );
     return result;
   }
 
-  static List<EpubChapter> mixChapters(
-      List<EpubChapter> realChapters, List<EpubChapter> allChapters) {
-    final mixedList = realChapters;
+  static List<EpubChapter> mixChapters(List<EpubChapter> realChapters,
+      List<EpubChapter> allChapters, EpubBookRef ref) {
+    final mixedList = <EpubChapter>[];
     var notesHtml = '';
-    EpubChapter? firstNotes;
+    var beginHtml = '';
+
     final realHtmls = realChapters.map((e) => e.HtmlContent);
     final lastChapterIndex = allChapters
         .lastIndexWhere((element) => realHtmls.contains(element.HtmlContent));
-    for (var i = 0; i <= lastChapterIndex; i++) {
+
+    final manifestItems = ref.Schema?.Package?.Manifest?.Items;
+    if (manifestItems != null) {
+      for (var i = 0; i < manifestItems.length; i++) {
+        final manifestItem = manifestItems[i];
+        final realChapter = realChapters.firstWhere(
+          (element) => element.Anchor == manifestItem.Href,
+          orElse: () => EpubChapter()..Title = 'Fake1 | 9Title',
+        );
+        if (realChapter.Title != 'Fake1 | 9Title') {
+          mixedList.add(realChapter);
+        } else {
+          final chapter = allChapters
+              .firstWhere((element) => element.Anchor == manifestItem.Href);
+          if (chapter.ContentFileName?.contains('note') != true) {
+            chapter.Title = '\$ empty-title \$';
+            mixedList.add(chapter);
+          }
+        }
+      }
+    }
+    for (var i = 0; i <= allChapters.length; i++) {
       final chapter = allChapters[i];
-      if (chapter.ContentFileName?.contains('note') == true) {
-        firstNotes = chapter;
-        break;
+      if (mixedList
+          .any((element) => element.HtmlContent == chapter.HtmlContent)) {
+      } else {
+        if (i < lastChapterIndex) {
+          beginHtml = beginHtml.isEmpty
+              ? chapter.HtmlContent ?? ''
+              : '$beginHtml\n${chapter.HtmlContent}';
+        } else {
+          notesHtml = notesHtml.isEmpty
+              ? chapter.HtmlContent ?? ''
+              : '$notesHtml\n${chapter.HtmlContent}';
+        }
       }
     }
 
-    for (var i = lastChapterIndex + 1; i < allChapters.length; i++) {
-      final chapter = allChapters[i];
-      notesHtml = '$notesHtml\n${chapter.HtmlContent}';
-    }
+    if (beginHtml.isNotEmpty) {
+      final beginChapter = EpubChapter();
+      beginChapter.HtmlContent = beginHtml;
+      beginChapter.Title = '\$begin-found-in-directory\$';
+      beginChapter.ContentFileName = 'begin';
 
-    notesHtml = notesHtml.isEmpty
-        ? firstNotes?.HtmlContent ?? ''
-        : '$notesHtml\n${firstNotes?.HtmlContent ?? ""}';
+      mixedList.insert(0, beginChapter);
+    }
 
     if (notesHtml.isNotEmpty) {
       final notesChapter = EpubChapter();
