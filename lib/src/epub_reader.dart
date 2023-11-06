@@ -99,7 +99,7 @@ class EpubReader {
 
   static List<EpubChapter> mixChapters(
       List<EpubChapter> realChapters, List<EpubChapter> allChapters) {
-    final mixedList = <EpubChapter>[];
+    final mixedList = realChapters;
     var notesHtml = '';
     EpubChapter? firstNotes;
     final realHtmls = realChapters.map((e) => e.HtmlContent);
@@ -107,26 +107,16 @@ class EpubReader {
         .lastIndexWhere((element) => realHtmls.contains(element.HtmlContent));
     for (var i = 0; i <= lastChapterIndex; i++) {
       final chapter = allChapters[i];
-      final realChapter = realChapters.firstWhere(
-        (element) => element.HtmlContent == chapter.HtmlContent,
-        orElse: () => EpubChapter()..Title = 'FakeChapter',
-      );
-
-      if (realChapter.Title != 'FakeChapter') {
-        mixedList.add(realChapter);
-      } else {
-        if (chapter.ContentFileName?.contains('note') == true) {
-          firstNotes = chapter;
-        } else {
-          //   mixedList.add(chapter);
-        }
+      if (chapter.ContentFileName?.contains('note') == true) {
+        firstNotes = chapter;
+        break;
       }
     }
 
-      for (var i = lastChapterIndex + 1; i < allChapters.length; i++) {
+    for (var i = lastChapterIndex + 1; i < allChapters.length; i++) {
       final chapter = allChapters[i];
       notesHtml = '$notesHtml\n${chapter.HtmlContent}';
-    } 
+    }
 
     notesHtml = notesHtml.isEmpty
         ? firstNotes?.HtmlContent ?? ''
