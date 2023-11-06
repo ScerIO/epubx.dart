@@ -106,13 +106,18 @@ class EpubReader {
     final mixedList = <EpubChapter>[];
     var notesHtml = '';
     var beginHtml = '';
+    final beginChapters = <EpubChapter>[];
+    final notesChapters = <EpubChapter>[];
 
     final realHtmls = realChapters.map((e) => e.HtmlContent);
+    final realNames = realChapters.map((e) => e.ContentFileName);
     final lastChapterIndex = allChapters
         .lastIndexWhere((element) => realHtmls.contains(element.HtmlContent));
-
     final manifestItems = ref.Schema?.Package?.Manifest?.Items;
+
     if (manifestItems != null) {
+      final lastChapterManifest = manifestItems
+          .lastIndexWhere((element) => realNames.contains(element.Href));
       for (var i = 0; i < manifestItems.length; i++) {
         final manifestItem = manifestItems[i];
         if (manifestItem.Href?.endsWith('html') == true ||
@@ -130,13 +135,10 @@ class EpubReader {
               orElse: () => EpubChapter()..Title = 'Fake1 | 9Title',
             );
             if (chapter.Title != 'Fake1 | 9Title') {
-              if (chapter.ContentFileName?.contains('note') != true) {
-                if (chapter.ContentFileName?.contains('cover') == true) {
-                  chapter.Title = '\$ cover-no-name \$';
-                } else {
-                  chapter.Title = '\$ empty-title \$';
-                }
-                mixedList.add(chapter);
+              if (i < lastChapterManifest) {
+                beginChapters.add(chapter);
+              } else {
+                notesChapters.add(chapter);
               }
             }
           }
@@ -145,20 +147,18 @@ class EpubReader {
     }
     for (var i = 0; i < allChapters.length; i++) {
       final chapter = allChapters[i];
-      if (mixedList
-          .any((element) => element.HtmlContent == chapter.HtmlContent)) {
+      if (beginChapters.contains(chapter) || notesChapters.contains(chapter)) {
       } else {
         if (i < lastChapterIndex) {
-          beginHtml = beginHtml.isEmpty
-              ? chapter.HtmlContent ?? ''
-              : '$beginHtml\n${chapter.HtmlContent}';
+          beginChapters.add(chapter);
         } else {
-          notesHtml = notesHtml.isEmpty
-              ? chapter.HtmlContent ?? ''
-              : '$notesHtml\n${chapter.HtmlContent}';
+          notesChapters.add(chapter);
         }
       }
     }
+
+    beginHtml = beginChapters.toHtml();
+    notesHtml = notesChapters.toHtml();
 
     if (beginHtml.isNotEmpty) {
       final beginChapter = EpubChapter();

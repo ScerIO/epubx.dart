@@ -37,3 +37,11 @@ class EpubChapter {
     return 'Title: $Title, Subchapter count: ${SubChapters!.length}';
   }
 }
+
+extension ChaptersExtension on List<EpubChapter> {
+  String toHtml() => fold(
+      '',
+      (previousValue, element) => previousValue.isEmpty
+          ? element.HtmlContent ?? ''
+          : "$previousValue\n${element.HtmlContent ?? ""}");
+}
