@@ -103,7 +103,7 @@ class EpubReader {
 
   static List<EpubChapter> mixChapters(List<EpubChapter> realChapters,
       List<EpubChapter> allChapters, EpubBookRef ref) {
-    final mixedList = <EpubChapter>[];
+    final mixedList = realChapters;
     var notesHtml = '';
     var beginHtml = '';
     final beginChapters = <EpubChapter>[];
@@ -128,7 +128,7 @@ class EpubReader {
           );
 
           if (realChapter.Title != 'Fake1 | 9Title') {
-            mixedList.add(realChapter);
+            //  mixedList.add(realChapter);
           } else {
             final chapter = allChapters.firstWhere(
               (element) => element.ContentFileName == manifestItem.Href,
