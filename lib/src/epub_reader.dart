@@ -131,7 +131,11 @@ class EpubReader {
             );
             if (chapter.Title != 'Fake1 | 9Title') {
               if (chapter.ContentFileName?.contains('note') != true) {
-                chapter.Title = '\$ empty-title \$';
+                if (chapter.ContentFileName?.contains('cover') == true) {
+                  chapter.Title = '\$ cover-no-name \$';
+                } else {
+                  chapter.Title = '\$ empty-title \$';
+                }
                 mixedList.add(chapter);
               }
             }
@@ -139,7 +143,7 @@ class EpubReader {
         }
       }
     }
-    for (var i = 0; i <= allChapters.length; i++) {
+    for (var i = 0; i < allChapters.length; i++) {
       final chapter = allChapters[i];
       if (mixedList
           .any((element) => element.HtmlContent == chapter.HtmlContent)) {
