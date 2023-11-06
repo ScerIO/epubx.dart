@@ -115,18 +115,22 @@ class EpubReader {
     if (manifestItems != null) {
       for (var i = 0; i < manifestItems.length; i++) {
         final manifestItem = manifestItems[i];
-        final realChapter = realChapters.firstWhere(
-          (element) => element.Anchor == manifestItem.Href,
-          orElse: () => EpubChapter()..Title = 'Fake1 | 9Title',
-        );
-        if (realChapter.Title != 'Fake1 | 9Title') {
-          mixedList.add(realChapter);
-        } else {
-          final chapter = allChapters
-              .firstWhere((element) => element.Anchor == manifestItem.Href);
-          if (chapter.ContentFileName?.contains('note') != true) {
-            chapter.Title = '\$ empty-title \$';
-            mixedList.add(chapter);
+        if (manifestItem.MediaType?.endsWith('html') == true ||
+            manifestItem.MediaType?.endsWith('xml') == true) {
+          final realChapter = realChapters.firstWhere(
+            (element) => element.ContentFileName == manifestItem.Href,
+            orElse: () => EpubChapter()..Title = 'Fake1 | 9Title',
+          );
+
+          if (realChapter.Title != 'Fake1 | 9Title') {
+            mixedList.add(realChapter);
+          } else {
+            final chapter = allChapters.firstWhere(
+                (element) => element.ContentFileName == manifestItem.Href);
+            if (chapter.ContentFileName?.contains('note') != true) {
+              chapter.Title = '\$ empty-title \$';
+              mixedList.add(chapter);
+            }
           }
         }
       }
