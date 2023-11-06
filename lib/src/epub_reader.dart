@@ -147,7 +147,9 @@ class EpubReader {
     }
     for (var i = 0; i < allChapters.length; i++) {
       final chapter = allChapters[i];
-      if (beginChapters.contains(chapter) || notesChapters.contains(chapter)) {
+      if (beginChapters.contains(chapter) ||
+          notesChapters.contains(chapter) ||
+          realHtmls.contains(chapter.HtmlContent)) {
       } else {
         if (i < lastChapterIndex) {
           beginChapters.add(chapter);
