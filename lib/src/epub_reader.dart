@@ -17,6 +17,7 @@ import 'ref_entities/epub_content_file_ref.dart';
 import 'ref_entities/epub_content_ref.dart';
 import 'ref_entities/epub_text_content_file_ref.dart';
 import 'schema/opf/epub_metadata_creator.dart';
+import 'package:html/parser.dart';
 
 /// A class that provides the primary interface to read Epub files.
 ///
@@ -255,7 +256,22 @@ class EpubReader {
   static Future<List<EpubChapter>> readChapters(
       List<EpubChapterRef> chapterRefs) async {
     var result = <EpubChapter>[];
-    await Future.forEach(chapterRefs, (EpubChapterRef chapterRef) async {
+    final fileIds = <String, List<EpubChapterRef>>{};
+    chapterRefs.forEach((ref) {
+      if (fileIds.containsKey(ref.ContentFileName)) {
+        fileIds[ref.ContentFileName]!.add(ref);
+      } else {
+        fileIds[ref.ContentFileName!] = [ref];
+      }
+    });
+
+    await Future.forEach(fileIds.values,
+        (List<EpubChapterRef> fileChaptersRefs) async {
+      final readChapters = await readChaptersFromFile(fileChaptersRefs);
+      result.addAll(readChapters);
+    });
+
+    /*await Future.forEach(chapterRefs, (EpubChapterRef chapterRef) async {
       var chapter = EpubChapter();
 
       chapter.Title = chapterRef.Title;
@@ -266,6 +282,47 @@ class EpubReader {
 
       result.add(chapter);
     });
+  */
     return result;
+  }
+
+  static Future<List<EpubChapter>> readChaptersFromFile(
+      List<EpubChapterRef> chapterRefs) async {
+    if (chapterRefs.isEmpty) {
+      return [];
+    }
+    final fileContent = await chapterRefs.first.readHtmlContent();
+    final chapters = chapterRefs
+        .map(
+          (ref) => EpubChapter()
+            ..Title = ref.Title
+            ..ContentFileName = ref.ContentFileName
+            ..Anchor = ref.Anchor,
+        )
+        .toList();
+    if (chapterRefs.length > 1) {
+      final htmlDocument = parse(fileContent);
+      final chapterIdElements = chapterRefs
+          .map((ref) => htmlDocument.getElementById(ref.Anchor ?? ''))
+          .toList();
+      final chapterIds = chapterIdElements
+          .map((e) => htmlDocument.children.indexOf(e!))
+          .toList();
+
+      for (var i = 0; i < chapterIds.length; i++) {
+        chapters[i].HtmlContent = chapterIdElements
+            .sublist(chapterIds[i] + 1, chapterIds[i + 1] - 1)
+            .join();
+      }
+    } else {
+      chapters.first.HtmlContent = fileContent;
+    }
+    final subChaptersFuture =
+        chapterRefs.map((ref) => readChaptersFromFile(ref.SubChapters ?? []));
+    final subChapters = await Future.wait(subChaptersFuture);
+    for (var i = 0; i < chapters.length; i++) {
+      chapters[i].SubChapters = subChapters[i];
+    }
+    return chapters;
   }
 }
