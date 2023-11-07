@@ -255,6 +255,9 @@ class EpubReader {
 
   static Future<List<EpubChapter>> readChapters(
       List<EpubChapterRef> chapterRefs) async {
+    if (chapterRefs.isEmpty) {
+      return [];
+    }
     var result = <EpubChapter>[];
     final fileIds = <String, List<EpubChapterRef>>{};
     chapterRefs.forEach((ref) {
@@ -306,6 +309,7 @@ class EpubReader {
       final chapterIdElements = chapterRefs
           .map((ref) => htmlDocument.getElementById(ref.Anchor ?? ''))
           .toList();
+
       final allElements = htmlDocument.querySelectorAll('*');
       final chapterIds =
           chapterIdElements.map((e) => allElements.indexOf(e!)).toList();
@@ -313,13 +317,14 @@ class EpubReader {
       for (var i = 0; i < chapterIds.length - 1; i++) {
         chapters[i].HtmlContent = allElements
             .sublist(chapterIds[i] + 1, chapterIds[i + 1] - 1)
+            .map((e) => e.outerHtml)
             .join();
       }
     } else {
       chapters.first.HtmlContent = fileContent;
     }
     final subChaptersFuture =
-        chapterRefs.map((ref) => readChaptersFromFile(ref.SubChapters ?? []));
+        chapterRefs.map((ref) => readChapters(ref.SubChapters ?? []));
     final subChapters = await Future.wait(subChaptersFuture);
     for (var i = 0; i < chapters.length; i++) {
       chapters[i].SubChapters = subChapters[i];
