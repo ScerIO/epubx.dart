@@ -302,12 +302,13 @@ class EpubReader {
         .toList();
     if (chapterRefs.length > 1) {
       final htmlDocument = parse(fileContent);
+
       final chapterIdElements = chapterRefs
           .map((ref) => htmlDocument.getElementById(ref.Anchor ?? ''))
           .toList();
-      final chapterIds = chapterIdElements
-          .map((e) => htmlDocument.children.indexOf(e!))
-          .toList();
+      final allElements = htmlDocument.querySelectorAll('*');
+      final chapterIds =
+          chapterIdElements.map((e) => allElements.indexOf(e!)).toList();
 
       for (var i = 0; i < chapterIds.length; i++) {
         chapters[i].HtmlContent = chapterIdElements
