@@ -317,10 +317,10 @@ class EpubReader {
       for (var i = 0; i < chapterIds.length; i++) {
         chapters[i].HtmlContent = allElements
             .sublist(
-                chapterIds[i],
+                chapterIds[i] - 1,
                 i == chapterIds.length - 1
                     ? allElements.length - 1
-                    : chapterIds[i + 1] - 1)
+                    : chapterIds[i + 1] - 2)
             .map((e) => e.outerHtml)
             .join();
       }
