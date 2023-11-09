@@ -1,8 +1,6 @@
 import 'dart:async';
 
-
 import 'package:archive/archive.dart';
-import 'package:html/dom.dart';
 
 import 'entities/epub_book.dart';
 import 'entities/epub_byte_content_file.dart';
@@ -112,10 +110,9 @@ class EpubReader {
     final beginChapters = <EpubChapter>[];
     final notesChapters = <EpubChapter>[];
 
-    final realHtmls = realChapters.map((e) => e.HtmlContent);
     final realNames = realChapters.map((e) => e.ContentFileName);
     final firstChapterIndex = allChapters
-        .indexWhere((element) => realHtmls.contains(element.HtmlContent));
+        .indexWhere((element) => realNames.contains(element.ContentFileName));
     final manifestItems = ref.Schema?.Package?.Manifest?.Items;
 
     if (manifestItems != null) {
@@ -152,7 +149,7 @@ class EpubReader {
       final chapter = allChapters[i];
       if (beginChapters.contains(chapter) ||
           notesChapters.contains(chapter) ||
-          realHtmls.contains(chapter.HtmlContent)) {
+          realNames.contains(chapter.ContentFileName)) {
       } else {
         if (i < firstChapterIndex) {
           beginChapters.add(chapter);
@@ -297,7 +294,6 @@ class EpubReader {
       return [];
     }
 
-
     final fileContent = await chapterRefs.first.readHtmlContent();
     final htmlDocument = parse(fileContent);
     var allElements = htmlDocument.querySelectorAll('*');
@@ -310,14 +306,10 @@ class EpubReader {
         )
         .toList();
     if (chapterRefs.length > 1) {
-
       final chapterIdElements = chapterRefs.map((ref) {
         final element = htmlDocument.getElementById(ref.Anchor ?? '');
         return element;
       }).toList();
-
-
-
 
       final chapterIds =
           chapterIdElements.map((e) => allElements.indexOf(e!)).toList();
@@ -326,15 +318,19 @@ class EpubReader {
         chapters[i].HtmlContent = allElements
             .sublist(
                 chapterIds[i] - 1,
-                chapterRefs[i].SubChapters?.isNotEmpty == true  ? chapterIds[i] + 1 :
-                i == chapterIds.length - 1
-                    ? allElements.length - 1
-                    : chapterIds[i + 1] - 2)
+                chapterRefs[i].SubChapters?.isNotEmpty == true
+                    ? chapterIds[i] + 1
+                    : i == chapterIds.length - 1
+                        ? allElements.length - 1
+                        : chapterIds[i + 1] - 2)
             .map((e) => e.outerHtml)
             .join();
       }
     } else {
-      chapters.first.HtmlContent = chapterRefs.first.SubChapters?.isNotEmpty == true ? allElements.take(2).join() :  fileContent ;
+      chapters.first.HtmlContent =
+          chapterRefs.first.SubChapters?.isNotEmpty == true
+              ? allElements.take(2).join()
+              : fileContent;
     }
     final subChaptersFuture =
         chapterRefs.map((ref) => readChapters(ref.SubChapters ?? []));
@@ -344,10 +340,4 @@ class EpubReader {
     }
     return chapters;
   }
-
-
-
-
-
-
 }
