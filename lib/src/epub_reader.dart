@@ -8,6 +8,7 @@ import 'entities/epub_chapter.dart';
 import 'entities/epub_content.dart';
 import 'entities/epub_content_file.dart';
 import 'entities/epub_text_content_file.dart';
+import 'entities/tag_position.dart';
 import 'readers/content_reader.dart';
 import 'readers/schema_reader.dart';
 import 'ref_entities/epub_book_ref.dart';
@@ -296,7 +297,7 @@ class EpubReader {
 
     final fileContent = await chapterRefs.first.readHtmlContent();
     final htmlDocument = parse(fileContent);
-    var allElements = htmlDocument.querySelectorAll('*');
+   // var allElements = htmlDocument.querySelectorAll('*');
     final chapters = chapterRefs
         .map(
           (ref) => EpubChapter()
@@ -312,24 +313,28 @@ class EpubReader {
       }).toList();
 
       final chapterIds =
-          chapterIdElements.map((e) => allElements.indexOf(e!)).toList();
+          chapterIdElements.map((element) { 
+            final startIndex = fileContent.indexOf(element!.outerHtml);
+            final lastIndex = startIndex + element.outerHtml.length;
+            return TagPosition(firstCharIndex:startIndex, lastCharIndex: lastIndex ,);
+          }).toList();
 
       for (var i = 0; i < chapterIds.length; i++) {
-        chapters[i].HtmlContent = allElements
-            .sublist(
-                chapterIds[i] - 1,
+        chapters[i].HtmlContent = fileContent
+            .substring(
+                chapterIds[i].firstCharIndex,
                 chapterRefs[i].SubChapters?.isNotEmpty == true
-                    ? chapterIds[i] + 1
+                    ? chapterIds[i].lastCharIndex
                     : i == chapterIds.length - 1
-                        ? allElements.length - 1
-                        : chapterIds[i + 1] - 2)
-            .map((e) => e.outerHtml)
-            .join();
+                        ? fileContent.length - 1
+                        : chapterIds[i + 1].firstCharIndex - 1);
+
+
       }
     } else {
       chapters.first.HtmlContent =
           chapterRefs.first.SubChapters?.isNotEmpty == true
-              ? allElements.take(2).join()
+              ? fileContent.substring(0, 20)
               : fileContent;
     }
     final subChaptersFuture =
@@ -340,4 +345,6 @@ class EpubReader {
     }
     return chapters;
   }
+
+
 }

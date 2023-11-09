@@ -44,8 +44,8 @@ class EpubChapterRef {
   Future<String> readHtmlContent() async {
     final content =
      await epubTextContentFileRef!.readContentAsText();
-    final normalized = _replaceTagsWithTrailingSolidus(content);
-    return normalized;
+   // final normalized = _replaceTagsWithTrailingSolidus(content);
+    return content;
   }
 
   String _replaceTagsWithTrailingSolidus(String htmlContent) {
