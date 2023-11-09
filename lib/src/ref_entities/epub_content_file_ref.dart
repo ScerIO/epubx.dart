@@ -97,6 +97,7 @@ abstract class EpubContentFileRef {
 
   Future<String> readContentAsText() async {
     var contentStream = getContentStream();
+
     var result = convert.utf8.decode(contentStream);
     return result;
   }
