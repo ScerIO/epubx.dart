@@ -42,10 +42,9 @@ class EpubChapterRef {
   }
 
   Future<String> readHtmlContent() async {
-    final content =
-     await epubTextContentFileRef!.readContentAsText();
-   // final normalized = _replaceTagsWithTrailingSolidus(content);
-    return content;
+    final content = await epubTextContentFileRef!.readContentAsText();
+    final normalized = _replaceTagsWithTrailingSolidus(content);
+    return normalized;
   }
 
   String _replaceTagsWithTrailingSolidus(String htmlContent) {
@@ -53,10 +52,11 @@ class EpubChapterRef {
     final tagWithSolidusRegex = RegExp(r'<(\w+)([^>]*)/>');
 
     // Use the replaceAll method to replace all occurrences of the matched pattern
-    String modifiedHtml = htmlContent.replaceAllMapped(tagWithSolidusRegex, (match) {
+    var modifiedHtml =
+        htmlContent.replaceAllMapped(tagWithSolidusRegex, (match) {
       // Extract the tag name and attributes from the original match
-      String tagName = match.group(1) ?? '';
-      String attributes = match.group(2) ?? '';
+      var tagName = match.group(1) ?? '';
+      var attributes = match.group(2) ?? '';
 
       // Replace the self-closing syntax with the standard opening and closing tag
       return '<$tagName$attributes></$tagName>';
@@ -64,7 +64,6 @@ class EpubChapterRef {
 
     return modifiedHtml;
   }
-
 
   @override
   String toString() {
