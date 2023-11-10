@@ -314,19 +314,19 @@ class EpubReader {
 
       final chapterIds =
           chapterIdElements.map((element) { 
-            final startIndex = fileContent.indexOf(element!.outerHtml);
+            final startIndex = htmlDocument.outerHtml.indexOf(element!.outerHtml);
             final lastIndex = startIndex + element.outerHtml.length;
             return TagPosition(firstCharIndex:startIndex, lastCharIndex: lastIndex ,);
           }).toList();
 
       for (var i = 0; i < chapterIds.length; i++) {
-        chapters[i].HtmlContent = fileContent
+        chapters[i].HtmlContent = htmlDocument.outerHtml
             .substring(
                 chapterIds[i].firstCharIndex,
                 chapterRefs[i].SubChapters?.isNotEmpty == true
                     ? chapterIds[i].lastCharIndex
                     : i == chapterIds.length - 1
-                        ? fileContent.length - 1
+                        ? htmlDocument.outerHtml.length - 1
                         : chapterIds[i + 1].firstCharIndex - 1);
 
 
@@ -334,8 +334,8 @@ class EpubReader {
     } else {
       chapters.first.HtmlContent =
           chapterRefs.first.SubChapters?.isNotEmpty == true
-              ? fileContent.substring(0, 20)
-              : fileContent;
+              ? htmlDocument.outerHtml.substring(0, 20)
+              : htmlDocument.outerHtml;
     }
     final subChaptersFuture =
         chapterRefs.map((ref) => readChapters(ref.SubChapters ?? []));
