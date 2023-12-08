@@ -111,7 +111,13 @@ class EpubReader {
     final beginChapters = <EpubChapter>[];
     final notesChapters = <EpubChapter>[];
 
-    final realNames = realChapters.map((e) => e.ContentFileName);
+    final realNamesList = realChapters.map((e) => [
+          e.ContentFileName,
+          if (e.SubChapters?.isNotEmpty == true)
+            ...e.SubChapters!.map((e) => e.ContentFileName),
+        ]);
+    final realNames = realNamesList.expand((element) => element);
+
     final firstChapterIndex = allChapters
         .indexWhere((element) => realNames.contains(element.ContentFileName));
     final manifestItems = ref.Schema?.Package?.Manifest?.Items;
@@ -297,7 +303,7 @@ class EpubReader {
 
     final fileContent = await chapterRefs.first.readHtmlContent();
     final htmlDocument = parse(fileContent);
-   // var allElements = htmlDocument.querySelectorAll('*');
+    // var allElements = htmlDocument.querySelectorAll('*');
     final chapters = chapterRefs
         .map(
           (ref) => EpubChapter()
@@ -312,24 +318,23 @@ class EpubReader {
         return element;
       }).toList();
 
-      final chapterIds =
-          chapterIdElements.map((element) { 
-            final startIndex = htmlDocument.outerHtml.indexOf(element!.outerHtml);
-            final lastIndex = startIndex + element.outerHtml.length;
-            return TagPosition(firstCharIndex:startIndex, lastCharIndex: lastIndex ,);
-          }).toList();
+      final chapterIds = chapterIdElements.map((element) {
+        final startIndex = htmlDocument.outerHtml.indexOf(element!.outerHtml);
+        final lastIndex = startIndex + element.outerHtml.length;
+        return TagPosition(
+          firstCharIndex: startIndex,
+          lastCharIndex: lastIndex,
+        );
+      }).toList();
 
       for (var i = 0; i < chapterIds.length; i++) {
-        chapters[i].HtmlContent = htmlDocument.outerHtml
-            .substring(
-                chapterIds[i].firstCharIndex,
-                chapterRefs[i].SubChapters?.isNotEmpty == true
-                    ? chapterIds[i].lastCharIndex
-                    : i == chapterIds.length - 1
-                        ? htmlDocument.outerHtml.length - 1
-                        : chapterIds[i + 1].firstCharIndex - 1);
-
-
+        chapters[i].HtmlContent = htmlDocument.outerHtml.substring(
+            chapterIds[i].firstCharIndex,
+            chapterRefs[i].SubChapters?.isNotEmpty == true
+                ? chapterIds[i].lastCharIndex
+                : i == chapterIds.length - 1
+                    ? htmlDocument.outerHtml.length - 1
+                    : chapterIds[i + 1].firstCharIndex - 1);
       }
     } else {
       chapters.first.HtmlContent =
@@ -345,6 +350,4 @@ class EpubReader {
     }
     return chapters;
   }
-
-
 }
