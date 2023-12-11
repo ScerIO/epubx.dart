@@ -2,6 +2,7 @@ import 'dart:async';
 
 import 'package:archive/archive.dart';
 import 'package:epubx/src/core/helper/extensions.dart';
+import 'package:epubx/src/utils/html_combiner.dart';
 
 import 'entities/epub_book.dart';
 import 'entities/epub_byte_content_file.dart';
@@ -182,9 +183,8 @@ class EpubReader {
                 } else if (i > lastChapterManifestIndex) {
                   notesChapters.add(chapter);
                 } else {
-                  lastChapter?.HtmlContent =
-                      (mixedList.last.HtmlContent ?? '') +
-                          (chapter.HtmlContent ?? '');
+                  lastChapter?.HtmlContent = combineHtmls(lastChapter?.HtmlContent, chapter.HtmlContent);
+
                 }
               }
             }
@@ -390,8 +390,8 @@ class EpubReader {
       for (var i = 0; i < chapter.SubChapters!.length; i++) {
         final subChapter = chapter.SubChapters![i];
         if (subChapter.Title?.isBlank() ?? true) {
-          chapter.HtmlContent =
-              (chapter.HtmlContent ?? '') + (subChapter.HtmlContent ?? '');
+          chapter.HtmlContent = combineHtmls(chapter.HtmlContent, subChapter.HtmlContent);
+
           count++;
         } else {
           break;
