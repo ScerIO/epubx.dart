@@ -117,7 +117,7 @@ class EpubReader {
   static List<EpubChapter> mixChapters(List<EpubChapter> realChapters,
       List<EpubChapter> allChapters, EpubBookRef ref) {
     //result list
-    final mixedList = realChapters;
+    final mixedList = <EpubChapter>[];
     //combined htmls of notes (untracked chapter with name contains 'note'
     //and all untracked chapters after last tracked chapter)
 
@@ -140,6 +140,9 @@ class EpubReader {
       final firstChapterManifestIndex = manifestItems
           .indexWhere((element) => realNames.contains(element.Href));
 
+      final lastChapterManifestIndex = manifestItems
+          .lastIndexWhere((element) => realNames.contains(element.Href));
+
       //looking through all manifest items to find html files that are not tracked,
       //than put them in notes or begin
 
@@ -149,17 +152,30 @@ class EpubReader {
           final isRealChapter = realNames.contains(
             manifestItem.Href,
           );
-
-          if (!isRealChapter) {
+          if (isRealChapter) {
+            final chapter = realChapters.firstWhere(
+              (element) => element.ContentFileName == manifestItem.Href,
+              orElse: () => EpubChapter()..Title = 'Fake1 | 9Title',
+            );
+            if (chapter.ContentFileName != 'Fake1 | 9Title') {
+              mixedList.add(chapter);
+            }
+          } else {
             final chapter = allChapters.firstWhere(
               (element) => element.ContentFileName == manifestItem.Href,
               orElse: () => EpubChapter()..Title = 'Fake1 | 9Title',
             );
             if (chapter.Title != 'Fake1 | 9Title') {
-              if (i < firstChapterManifestIndex) {
-                beginChapters.add(chapter);
-              } else {
+              if (chapter.Title?.contains('note') ?? false) {
                 notesChapters.add(chapter);
+              } else {
+                if (i < firstChapterManifestIndex) {
+                  beginChapters.add(chapter);
+                } else if (i > lastChapterManifestIndex) {
+                  notesChapters.add(chapter);
+                } else {
+                  mixedList.add(chapter);
+                }
               }
             }
           }
