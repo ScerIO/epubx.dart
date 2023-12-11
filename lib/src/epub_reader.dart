@@ -135,7 +135,7 @@ class EpubReader {
     //lists of those chapters
     final beginChapters = <EpubChapter>[];
     final notesChapters = <EpubChapter>[];
-
+    final untrackedManifestItems = <String?>[];
     //names of tracked chapters
     final allRealChapters = getAllChapters(realChapters);
 
@@ -183,6 +183,7 @@ class EpubReader {
                 } else if (i > lastChapterManifestIndex) {
                   notesChapters.add(chapter);
                 } else {
+                  untrackedManifestItems.add(chapter.ContentFileName);
                   lastChapter?.HtmlContent = combineHtmls(lastChapter?.HtmlContent, chapter.HtmlContent);
 
                 }
@@ -197,7 +198,7 @@ class EpubReader {
       if (beginChapters.contains(chapter) ||
           notesChapters.contains(chapter) ||
           allRealChapters
-              .any((real) => real.ContentFileName == chapter.ContentFileName)) {
+              .any((real) => real.ContentFileName == chapter.ContentFileName) || untrackedManifestItems.contains(chapter.ContentFileName,)) {
       } else {
         if (i < firstChapterIndex) {
           beginChapters.add(chapter);
