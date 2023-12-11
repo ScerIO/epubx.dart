@@ -94,6 +94,9 @@ class EpubReader {
     result.CoverImage = await epubBookRef.readCover();
     var chapterRefs = await epubBookRef.getChapters();
     result.Chapters = await readChapters(chapterRefs);
+    result.Chapters!.forEach((element) {
+      concatenateChapterContent(element);
+    });
 
     final allChapters = await epubBookRef.getAllChapters();
     result.Chapters = mixChapters(
@@ -104,11 +107,15 @@ class EpubReader {
     return result;
   }
 
-  static List<String?> getNamesOfAllChapters(List<EpubChapter> chapters) {
-    final list = chapters.map((e) => e.ContentFileName).toList();
+  static List<EpubChapter> getAllChapters(
+    List<EpubChapter> chapters,
+  ) {
+    final list = [...chapters];
     chapters.forEach((element) {
       if (element.SubChapters?.isNotEmpty ?? false) {
-        list.addAll(getNamesOfAllChapters(element.SubChapters!));
+        list.addAll(
+          getAllChapters(element.SubChapters!),
+        );
       }
     });
     return list;
@@ -129,37 +136,38 @@ class EpubReader {
     final notesChapters = <EpubChapter>[];
 
     //names of tracked chapters
-    final realNames = getNamesOfAllChapters(realChapters);
+    final allRealChapters = getAllChapters(realChapters);
 
     //index of the first tracked chapter in the whole list
-    final firstChapterIndex = allChapters
-        .indexWhere((element) => realNames.contains(element.ContentFileName));
+    final firstChapterIndex = allChapters.indexWhere(
+      (element) => allRealChapters
+          .any((real) => real.ContentFileName == element.ContentFileName),
+    );
     final manifestItems = ref.Schema?.Package?.Manifest?.Items;
 
     if (manifestItems != null) {
-      final firstChapterManifestIndex = manifestItems
-          .indexWhere((element) => realNames.contains(element.Href));
+      final firstChapterManifestIndex = manifestItems.indexWhere((element) =>
+          allRealChapters.any((real) => real.ContentFileName == element.Href));
 
-      final lastChapterManifestIndex = manifestItems
-          .lastIndexWhere((element) => realNames.contains(element.Href));
+      final lastChapterManifestIndex = manifestItems.lastIndexWhere((element) =>
+          allRealChapters.any((real) => real.ContentFileName == element.Href));
 
       //looking through all manifest items to find html files that are not tracked,
       //than put them in notes or begin
-
+      EpubChapter? lastChapter;
       for (var i = 0; i < manifestItems.length; i++) {
         final manifestItem = manifestItems[i];
         if (manifestItem.Href?.isFileHtml() ?? false) {
-          final isRealChapter = realNames.contains(
-            manifestItem.Href,
+          final realChaptersFound = allRealChapters.where(
+            (real) => real.ContentFileName == manifestItem.Href,
           );
-          if (isRealChapter) {
-            final chapter = realChapters.firstWhere(
-              (element) => element.ContentFileName == manifestItem.Href,
-              orElse: () => EpubChapter()..Title = 'Fake1 | 9Title',
-            );
-            if (chapter.ContentFileName != 'Fake1 | 9Title') {
-              mixedList.add(chapter);
-            }
+          if (realChaptersFound.isNotEmpty) {
+            realChaptersFound.forEach((element) {
+              if (realChapters.contains(element)) {
+                mixedList.add(element);
+              }
+              lastChapter = element;
+            });
           } else {
             final chapter = allChapters.firstWhere(
               (element) => element.ContentFileName == manifestItem.Href,
@@ -174,7 +182,9 @@ class EpubReader {
                 } else if (i > lastChapterManifestIndex) {
                   notesChapters.add(chapter);
                 } else {
-                  mixedList.add(chapter);
+                  lastChapter?.HtmlContent =
+                      (mixedList.last.HtmlContent ?? '') +
+                          (chapter.HtmlContent ?? '');
                 }
               }
             }
@@ -186,7 +196,8 @@ class EpubReader {
       final chapter = allChapters[i];
       if (beginChapters.contains(chapter) ||
           notesChapters.contains(chapter) ||
-          realNames.contains(chapter.ContentFileName)) {
+          allRealChapters
+              .any((real) => real.ContentFileName == chapter.ContentFileName)) {
       } else {
         if (i < firstChapterIndex) {
           beginChapters.add(chapter);
@@ -309,19 +320,8 @@ class EpubReader {
       final readChapters = await readChaptersFromFile(fileChaptersRefs);
       result.addAll(readChapters);
     });
+    print(1);
 
-    /*await Future.forEach(chapterRefs, (EpubChapterRef chapterRef) async {
-      var chapter = EpubChapter();
-
-      chapter.Title = chapterRef.Title;
-      chapter.ContentFileName = chapterRef.ContentFileName;
-      chapter.Anchor = chapterRef.Anchor;
-      chapter.HtmlContent = await chapterRef.readHtmlContent();
-      chapter.SubChapters = await readChapters(chapterRef.SubChapters ?? []);
-
-      result.add(chapter);
-    });
-  */
     return result;
   }
 
@@ -379,5 +379,27 @@ class EpubReader {
       chapters[i].SubChapters = subChapters[i];
     }
     return chapters;
+  }
+
+  static void concatenateChapterContent(EpubChapter chapter) {
+    if (chapter.SubChapters?.isNotEmpty ?? false) {
+      for (var subchapter in chapter.SubChapters!) {
+        concatenateChapterContent(subchapter);
+      }
+      var count = 0;
+      for (var i = 0; i < chapter.SubChapters!.length; i++) {
+        final subChapter = chapter.SubChapters![i];
+        if (subChapter.Title?.isBlank() ?? true) {
+          chapter.HtmlContent =
+              (chapter.HtmlContent ?? '') + (subChapter.HtmlContent ?? '');
+          count++;
+        } else {
+          break;
+        }
+      }
+      chapter.SubChapters = chapter.SubChapters!.skip(count).toList();
+
+      // Recursively process subchapters
+    }
   }
 }
