@@ -1,6 +1,7 @@
 import 'dart:async';
 
 import 'package:epubx/epubx.dart';
+import 'package:epubx/src/core/helper/extensions.dart';
 import 'package:epubx/src/ref_entities/epub_text_content_file_ref.dart';
 
 class BookAllChaptersReader {
@@ -25,8 +26,7 @@ class BookAllChaptersReader {
           .where(
             (element) =>
                 element is EpubTextContentFileRef &&
-                (element.FileName?.endsWith('html') == true ||
-                    element.FileName?.endsWith('xml') == true),
+                (element.FileName?.isFileHtml() ?? false),
           )
           .toList();
       final allChapterRefs = allFiles

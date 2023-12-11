@@ -1,6 +1,7 @@
 import 'dart:async';
 
 import 'package:archive/archive.dart';
+import 'package:epubx/src/core/helper/extensions.dart';
 
 import 'entities/epub_book.dart';
 import 'entities/epub_byte_content_file.dart';
@@ -103,21 +104,34 @@ class EpubReader {
     return result;
   }
 
+  static List<String?> getNamesOfAllChapters(List<EpubChapter> chapters) {
+    final list = chapters.map((e) => e.ContentFileName).toList();
+    chapters.forEach((element) {
+      if (element.SubChapters?.isNotEmpty ?? false) {
+        list.addAll(getNamesOfAllChapters(element.SubChapters!));
+      }
+    });
+    return list;
+  }
+
   static List<EpubChapter> mixChapters(List<EpubChapter> realChapters,
       List<EpubChapter> allChapters, EpubBookRef ref) {
+    //result list
     final mixedList = realChapters;
+    //combined htmls of notes (untracked chapter with name contains 'note'
+    //and all untracked chapters after last tracked chapter)
+
+    //and begin (untracked chapters before first tracked chapter)
     var notesHtml = '';
     var beginHtml = '';
+    //lists of those chapters
     final beginChapters = <EpubChapter>[];
     final notesChapters = <EpubChapter>[];
 
-    final realNamesList = realChapters.map((e) => [
-          e.ContentFileName,
-          if (e.SubChapters?.isNotEmpty == true)
-            ...e.SubChapters!.map((e) => e.ContentFileName),
-        ]);
-    final realNames = realNamesList.expand((element) => element);
+    //names of tracked chapters
+    final realNames = getNamesOfAllChapters(realChapters);
 
+    //index of the first tracked chapter in the whole list
     final firstChapterIndex = allChapters
         .indexWhere((element) => realNames.contains(element.ContentFileName));
     final manifestItems = ref.Schema?.Package?.Manifest?.Items;
@@ -125,18 +139,18 @@ class EpubReader {
     if (manifestItems != null) {
       final firstChapterManifestIndex = manifestItems
           .indexWhere((element) => realNames.contains(element.Href));
+
+      //looking through all manifest items to find html files that are not tracked,
+      //than put them in notes or begin
+
       for (var i = 0; i < manifestItems.length; i++) {
         final manifestItem = manifestItems[i];
-        if (manifestItem.Href?.endsWith('html') == true ||
-            manifestItem.Href?.endsWith('xml') == true) {
-          final realChapter = realChapters.firstWhere(
-            (element) => element.ContentFileName == manifestItem.Href,
-            orElse: () => EpubChapter()..Title = 'Fake1 | 9Title',
+        if (manifestItem.Href?.isFileHtml() ?? false) {
+          final isRealChapter = realNames.contains(
+            manifestItem.Href,
           );
 
-          if (realChapter.Title != 'Fake1 | 9Title') {
-            //  mixedList.add(realChapter);
-          } else {
+          if (!isRealChapter) {
             final chapter = allChapters.firstWhere(
               (element) => element.ContentFileName == manifestItem.Href,
               orElse: () => EpubChapter()..Title = 'Fake1 | 9Title',
