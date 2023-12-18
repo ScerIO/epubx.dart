@@ -22,6 +22,7 @@ import 'ref_entities/epub_text_content_file_ref.dart';
 import 'schema/opf/epub_metadata_creator.dart';
 import 'package:html/parser.dart';
 import 'package:html/dom.dart';
+import 'package:collection/collection.dart';
 
 /// A class that provides the primary interface to read Epub files.
 ///
@@ -360,14 +361,21 @@ class EpubReader {
   }
 
   static Future<List<EpubChapter>> readChaptersFromFile(
-      List<EpubChapterRef> chapterRefs) async {
+      List<EpubChapterRef> chapterRefs, {
+        int? lastIndexInFile,
+        Document? fileDoc,
+      }) async {
     if (chapterRefs.isEmpty) {
       return [];
     }
+    late final Document htmlDocument;
+    if (fileDoc == null) {
+      final fileContent = await chapterRefs.first.readHtmlContent();
+      htmlDocument = parse(fileContent);
+    } else {
+      htmlDocument = fileDoc;
+    }
 
-    final fileContent = await chapterRefs.first.readHtmlContent();
-    final htmlDocument = parse(fileContent);
-    // var allElements = htmlDocument.querySelectorAll('*');
     final chapters = chapterRefs
         .map(
           (ref) => EpubChapter()
@@ -380,20 +388,32 @@ class EpubReader {
       final chapterIds = getChapterIdsInFile(chapterRefs, htmlDocument);
 
       for (var i = 0; i < chapterIds.length; i++) {
-        var lastIndex = i != chapterIds.length - 1 ?  chapterIds[i + 1].firstCharIndex - 1 : htmlDocument.outerHtml.length - 1 ;
+        var lastIndex = i != chapterIds.length - 1
+            ? chapterIds[i + 1].firstCharIndex - 1
+            : lastIndexInFile ?? htmlDocument.outerHtml.length - 1;
         if (chapterRefs[i].SubChapters?.isNotEmpty == true) {
           final subIds =
           getChapterIdsInFile(chapterRefs[i].SubChapters!, htmlDocument);
           final firstSubId =
           firstSubChapterFrom(subIds, chapterIds[i].firstCharIndex);
+          final isChapterFromAnotherFile = chapterRefs[i].SubChapters!.any(
+                (element) =>
+            element.ContentFileName != chapterRefs[i].ContentFileName,
+          );
+          if (!isChapterFromAnotherFile) {
+            final subChapters = await readChaptersFromFile(
+              chapterRefs[i].SubChapters!,
+              lastIndexInFile: lastIndex,
+              fileDoc: htmlDocument,
+            );
+            chapters[i].SubChapters = subChapters;
+          }
           if (firstSubId != null &&
-              firstSubId! < chapterIds[i + 1].firstCharIndex) {
+              firstSubId! < lastIndex) {
             lastIndex = firstSubId;
           }
         }
-        if (i == chapterIds.length - 1) {
-          lastIndex = htmlDocument.outerHtml.length - 1;
-        }
+
         chapters[i].HtmlContent = htmlDocument.outerHtml.substring(
           chapterIds[i].firstCharIndex,
           lastIndex,
@@ -405,8 +425,10 @@ class EpubReader {
           ? htmlDocument.outerHtml.substring(0, 20)
           : htmlDocument.outerHtml;
     }
-    final subChaptersFuture =
-    chapterRefs.map((ref) => readChapters(ref.SubChapters ?? []));
+    final subChaptersFuture = chapterRefs.mapIndexed((index, ref) =>
+    chapters[index].SubChapters?.isNotEmpty ?? false
+        ? Future.value(chapters[index].SubChapters!)
+        : readChapters(ref.SubChapters ?? []));
     final subChapters = await Future.wait(subChaptersFuture);
     for (var i = 0; i < chapters.length; i++) {
       chapters[i].SubChapters = subChapters[i];
