@@ -217,7 +217,7 @@ class EpubReader {
     notesHtml = notesChapters.toHtml();
 
     if (beginHtml.isNotEmpty) {
-      beginHtml = notesHtml + '<p>&nbsp;</p>';
+
       final beginChapter = EpubChapter();
       beginChapter.HtmlContent = beginHtml;
       beginChapter.Title = '\$begin-found-in-directory\$';
@@ -227,7 +227,7 @@ class EpubReader {
     }
 
     if (notesHtml.isNotEmpty) {
-      notesHtml = notesHtml + '<p>&nbsp;</p>';
+
       final notesChapter = EpubChapter();
       notesChapter.HtmlContent = notesHtml;
       notesChapter.Title = '\$notes-found-in-directory\$';
