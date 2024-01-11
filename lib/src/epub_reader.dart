@@ -111,8 +111,8 @@ class EpubReader {
   }
 
   static List<EpubChapter> getAllChapters(
-      List<EpubChapter> chapters,
-      ) {
+    List<EpubChapter> chapters,
+  ) {
     final list = [...chapters];
     chapters.forEach((element) {
       if (element.SubChapters?.isNotEmpty ?? false) {
@@ -143,7 +143,7 @@ class EpubReader {
 
     //index of the first tracked chapter in the whole list
     final firstChapterIndex = allChapters.indexWhere(
-          (element) => allRealChapters
+      (element) => allRealChapters
           .any((real) => real.ContentFileName == element.ContentFileName),
     );
     final manifestItems = ref.Schema?.Package?.Manifest?.Items;
@@ -162,7 +162,7 @@ class EpubReader {
         final manifestItem = manifestItems[i];
         if (manifestItem.Href?.isFileHtml() ?? false) {
           final realChaptersFound = allRealChapters.where(
-                (real) => real.ContentFileName == manifestItem.Href,
+            (real) => real.ContentFileName == manifestItem.Href,
           );
           if (realChaptersFound.isNotEmpty) {
             realChaptersFound.forEach((element) {
@@ -173,7 +173,7 @@ class EpubReader {
             });
           } else {
             final chapter = allChapters.firstWhere(
-                  (element) => element.ContentFileName == manifestItem.Href,
+              (element) => element.ContentFileName == manifestItem.Href,
               orElse: () => EpubChapter()..Title = 'Fake1 | 9Title',
             );
             if (chapter.Title != 'Fake1 | 9Title') {
@@ -217,7 +217,6 @@ class EpubReader {
     notesHtml = notesChapters.toHtml();
 
     if (beginHtml.isNotEmpty) {
-
       final beginChapter = EpubChapter();
       beginChapter.HtmlContent = beginHtml;
       beginChapter.Title = '\$begin-found-in-directory\$';
@@ -227,7 +226,6 @@ class EpubReader {
     }
 
     if (notesHtml.isNotEmpty) {
-
       final notesChapter = EpubChapter();
       notesChapter.HtmlContent = notesHtml;
       notesChapter.Title = '\$notes-found-in-directory\$';
@@ -264,7 +262,7 @@ class EpubReader {
     await Future.forEach(contentRef.AllFiles!.keys, (dynamic key) async {
       if (!result.AllFiles!.containsKey(key)) {
         result.AllFiles![key] =
-        await readByteContentFile(contentRef.AllFiles![key]!);
+            await readByteContentFile(contentRef.AllFiles![key]!);
       }
     });
 
@@ -324,10 +322,10 @@ class EpubReader {
     });
 
     await Future.forEach(fileIds.values,
-            (List<EpubChapterRef> fileChaptersRefs) async {
-          final readChapters = await readChaptersFromFile(fileChaptersRefs);
-          result.addAll(readChapters);
-        });
+        (List<EpubChapterRef> fileChaptersRefs) async {
+      final readChapters = await readChaptersFromFile(fileChaptersRefs);
+      result.addAll(readChapters);
+    });
     print(1);
 
     return result;
@@ -341,8 +339,9 @@ class EpubReader {
     }).toList();
 
     final chapterIds = chapterIdElements.map((element) {
-      final startIndex = htmlDocument.outerHtml.indexOf(element!.outerHtml);
-      final lastIndex = startIndex + element.outerHtml.length;
+      final startIndex =
+          htmlDocument.outerHtml.indexOf(element?.outerHtml ?? '');
+      final lastIndex = startIndex + (element?.outerHtml.length ?? 0);
       return TagPosition(
         firstCharIndex: startIndex,
         lastCharIndex: lastIndex,
@@ -363,10 +362,10 @@ class EpubReader {
   }
 
   static Future<List<EpubChapter>> readChaptersFromFile(
-      List<EpubChapterRef> chapterRefs, {
-        int? lastIndexInFile,
-        Document? fileDoc,
-      }) async {
+    List<EpubChapterRef> chapterRefs, {
+    int? lastIndexInFile,
+    Document? fileDoc,
+  }) async {
     if (chapterRefs.isEmpty) {
       return [];
     }
@@ -381,10 +380,10 @@ class EpubReader {
     final chapters = chapterRefs
         .map(
           (ref) => EpubChapter()
-        ..Title = ref.Title
-        ..ContentFileName = ref.ContentFileName
-        ..Anchor = ref.Anchor,
-    )
+            ..Title = ref.Title
+            ..ContentFileName = ref.ContentFileName
+            ..Anchor = ref.Anchor,
+        )
         .toList();
     if (chapterRefs.length > 1) {
       final chapterIds = getChapterIdsInFile(chapterRefs, htmlDocument);
@@ -395,13 +394,13 @@ class EpubReader {
             : lastIndexInFile ?? htmlDocument.outerHtml.length - 1;
         if (chapterRefs[i].SubChapters?.isNotEmpty == true) {
           final subIds =
-          getChapterIdsInFile(chapterRefs[i].SubChapters!, htmlDocument);
+              getChapterIdsInFile(chapterRefs[i].SubChapters!, htmlDocument);
           final firstSubId =
-          firstSubChapterFrom(subIds, chapterIds[i].firstCharIndex);
+              firstSubChapterFrom(subIds, chapterIds[i].firstCharIndex);
           final isChapterFromAnotherFile = chapterRefs[i].SubChapters!.any(
                 (element) =>
-            element.ContentFileName != chapterRefs[i].ContentFileName,
-          );
+                    element.ContentFileName != chapterRefs[i].ContentFileName,
+              );
           if (!isChapterFromAnotherFile) {
             final subChapters = await readChaptersFromFile(
               chapterRefs[i].SubChapters!,
@@ -410,8 +409,7 @@ class EpubReader {
             );
             chapters[i].SubChapters = subChapters;
           }
-          if (firstSubId != null &&
-              firstSubId! < lastIndex) {
+          if (firstSubId != null && firstSubId < lastIndex) {
             lastIndex = firstSubId;
           }
         }
@@ -423,14 +421,14 @@ class EpubReader {
       }
     } else {
       chapters.first.HtmlContent =
-      chapterRefs.first.SubChapters?.isNotEmpty == true
-          ? htmlDocument.outerHtml.substring(0, 20)
-          : htmlDocument.outerHtml;
+          chapterRefs.first.SubChapters?.isNotEmpty == true
+              ? htmlDocument.outerHtml.substring(0, 20)
+              : htmlDocument.outerHtml;
     }
     final subChaptersFuture = chapterRefs.mapIndexed((index, ref) =>
-    chapters[index].SubChapters?.isNotEmpty ?? false
-        ? Future.value(chapters[index].SubChapters!)
-        : readChapters(ref.SubChapters ?? []));
+        chapters[index].SubChapters?.isNotEmpty ?? false
+            ? Future.value(chapters[index].SubChapters!)
+            : readChapters(ref.SubChapters ?? []));
     final subChapters = await Future.wait(subChaptersFuture);
     for (var i = 0; i < chapters.length; i++) {
       chapters[i].SubChapters = subChapters[i];
