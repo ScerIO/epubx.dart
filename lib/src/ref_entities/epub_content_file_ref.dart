@@ -2,7 +2,6 @@ import 'dart:async';
 import 'dart:convert' as convert;
 
 import 'package:archive/archive.dart';
-import 'package:collection/collection.dart' show IterableExtension;
 import 'package:quiver/core.dart';
 
 import '../entities/epub_content_type.dart';
@@ -38,14 +37,42 @@ abstract class EpubContentFileRef {
   ArchiveFile getContentFileEntry() {
     var contentFilePath = ZipPathUtils.combine(
         epubBookRef.Schema!.ContentDirectoryPath, FileName);
-    var contentFileEntry = epubBookRef.EpubArchive()!
-        .files
-        .firstWhereOrNull((ArchiveFile x) => x.name == contentFilePath);
+    var contentFileEntry = findArchiveFileByName(
+        epubBookRef.EpubArchive()!.files, contentFilePath ?? 'null+not-exist');
+
     if (contentFileEntry == null) {
       throw Exception(
           'EPUB parsing error: file $contentFilePath not found in archive.');
     }
     return contentFileEntry;
+  }
+
+  ArchiveFile? findArchiveFileByName(List<ArchiveFile> files, String name) {
+    name = normalizeString(name);
+    ArchiveFile? maybe1File;
+    ArchiveFile? maybe2File;
+    for (var file in files) {
+      final fileName = normalizeString(file.name);
+      if (fileName == name) {
+        return file;
+      }
+      if (fileName.contains(name)) {
+        maybe1File = file;
+      }
+      if (name.contains(fileName)) {
+        maybe2File = file;
+      }
+    }
+    return maybe1File ?? maybe2File;
+  }
+
+  static String normalizeString(String s) {
+    try {
+      s = Uri.decodeFull(s);
+    } catch (_) {}
+    ;
+    s = s.replaceAll('й', 'й');
+    return s;
   }
 
   List<int> getContentStream() {
@@ -70,6 +97,7 @@ abstract class EpubContentFileRef {
 
   Future<String> readContentAsText() async {
     var contentStream = getContentStream();
+
     var result = convert.utf8.decode(contentStream);
     return result;
   }
