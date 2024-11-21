@@ -10,6 +10,9 @@ class EpubManifestWriter {
             ..attribute('id', item.Id!)
             ..attribute('href', item.Href!)
             ..attribute('media-type', item.MediaType!);
+            if (item.Properties != null) {
+              builder.attribute('properties', item.Properties);
+            }
         });
       });
     });
