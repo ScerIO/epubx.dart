@@ -1,22 +1,14 @@
 import 'dart:async';
 
 import 'package:archive/archive.dart';
+import 'package:epubx/epubx.dart';
 
-import 'entities/epub_book.dart';
-import 'entities/epub_byte_content_file.dart';
-import 'entities/epub_chapter.dart';
-import 'entities/epub_content.dart';
-import 'entities/epub_content_file.dart';
-import 'entities/epub_text_content_file.dart';
 import 'readers/content_reader.dart';
 import 'readers/schema_reader.dart';
-import 'ref_entities/epub_book_ref.dart';
 import 'ref_entities/epub_byte_content_file_ref.dart';
-import 'ref_entities/epub_chapter_ref.dart';
 import 'ref_entities/epub_content_file_ref.dart';
 import 'ref_entities/epub_content_ref.dart';
 import 'ref_entities/epub_text_content_file_ref.dart';
-import 'schema/opf/epub_metadata_creator.dart';
 
 /// A class that provides the primary interface to read Epub files.
 ///
@@ -119,8 +111,12 @@ class EpubReader {
 
     await Future.forEach(contentRef.AllFiles!.keys, (dynamic key) async {
       if (!result.AllFiles!.containsKey(key)) {
-        result.AllFiles![key] =
-            await readByteContentFile(contentRef.AllFiles![key]!);
+        try {
+          result.AllFiles![key] =
+              await readByteContentFile(contentRef.AllFiles![key]!);
+        } catch (FileNotFoundException) {
+          // Do nothing, let the file be missing.
+        }
       }
     });
 
@@ -147,7 +143,11 @@ class EpubReader {
       Map<String, EpubByteContentFileRef> byteContentFileRefs) async {
     var result = <String, EpubByteContentFile>{};
     await Future.forEach(byteContentFileRefs.keys, (dynamic key) async {
-      result[key] = await readByteContentFile(byteContentFileRefs[key]!);
+      try {
+        result[key] = await readByteContentFile(byteContentFileRefs[key]!);
+      } catch (FileNotFoundException) {
+        // Do nothing, let the file be missing.
+      }
     });
     return result;
   }

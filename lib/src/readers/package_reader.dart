@@ -290,6 +290,7 @@ class PackageReader {
       XmlElement metadataMetaNode) {
     var result = EpubMetadataMeta();
     result.Attributes = {};
+    result.Content = metadataMetaNode.value ?? metadataMetaNode.innerText;
     metadataMetaNode.attributes
         .forEach((XmlAttribute metadataMetaNodeAttribute) {
       var attributeValue = metadataMetaNodeAttribute.value;
@@ -308,9 +309,14 @@ class PackageReader {
         case 'scheme':
           result.Scheme = attributeValue;
           break;
+        case 'name':
+          result.Name = attributeValue;
+          break;
+        case 'content':
+          result.Content = attributeValue;
+          break;
       }
     });
-    result.Content = metadataMetaNode.text;
     return result;
   }
 
