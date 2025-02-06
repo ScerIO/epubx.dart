@@ -120,7 +120,7 @@ class ChapterReader {
     var addedChapters = <String>[]; // List to store items for removal
 
     for (var fileName in unmappedChapters) {
-      if (fileName.contains(baseName) &&
+      if (fileName.contains('${baseName}_split') &&
           fileName != chapterRef.ContentFileName) {
         chapterRef.otherTextContentFileRefs
             .add(bookRef.Content!.Html![fileName]!);
