@@ -7,16 +7,15 @@ import 'epub_text_content_file_ref.dart';
 
 class EpubChapterRef {
   // Referece to Text content reader.
-  EpubTextContentFileRef? epubTextContentFileRef;
-  // If the chapter is split into multiple files, this list contains the references to content readers of the other files.
-  List<EpubTextContentFileRef> otherTextContentFileRefs = [];
+  late EpubTextContentFileRef epubTextContentFileRef;
 
   String? Title;
   String? ContentFileName;
   String? Anchor;
-  List<EpubChapterRef>? SubChapters;
+  List<EpubChapterRef> SubChapters = [];
+  List<EpubTextContentFileRef> OtherChapterFragments = [];
 
-  EpubChapterRef(EpubTextContentFileRef? epubTextContentFileRef) {
+  EpubChapterRef(EpubTextContentFileRef epubTextContentFileRef) {
     this.epubTextContentFileRef = epubTextContentFileRef;
   }
 
@@ -27,8 +26,8 @@ class EpubChapterRef {
       ContentFileName.hashCode,
       Anchor.hashCode,
       epubTextContentFileRef.hashCode,
-      otherTextContentFileRefs.hashCode,
-      ...SubChapters?.map((subChapter) => subChapter.hashCode) ?? [0],
+      ...SubChapters.map((subChapter) => subChapter.hashCode),
+      ...OtherChapterFragments.map((subChapter) => subChapter.hashCode),
     ];
     return hashObjects(objects);
   }
@@ -42,16 +41,26 @@ class EpubChapterRef {
         ContentFileName == other.ContentFileName &&
         Anchor == other.Anchor &&
         epubTextContentFileRef == other.epubTextContentFileRef &&
-        otherTextContentFileRefs == other.otherTextContentFileRefs &&
         collections.listsEqual(SubChapters, other.SubChapters);
   }
 
   Future<String> readHtmlContent() async {
-    return epubTextContentFileRef!.readContentAsText();
+    var contentFuture = epubTextContentFileRef.readContentAsText();
+    if (OtherChapterFragments.isNotEmpty) {
+      var allContentFutures = <Future<String>>[contentFuture];
+      for (var fragments in OtherChapterFragments) {
+        allContentFutures.add(fragments.readContentAsText());
+      }
+      return Future.wait(allContentFutures).then((List<String> contents) {
+        return contents.join('');
+      });
+    } else {
+      return contentFuture;
+    }
   }
 
   @override
   String toString() {
-    return 'Title: $Title, Subchapter count: ${SubChapters!.length}';
+    return 'Title: $Title, Subchapter count: ${SubChapters.length}';
   }
 }

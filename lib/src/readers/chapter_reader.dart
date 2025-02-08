@@ -1,10 +1,7 @@
 import 'package:epubx/epubx.dart';
 import 'package:epubx/src/utils/file_name_decoder.dart';
 
-import '../ref_entities/epub_book_ref.dart';
-import '../ref_entities/epub_chapter_ref.dart';
 import '../ref_entities/epub_text_content_file_ref.dart';
-import '../schema/navigation/epub_navigation_point.dart';
 
 class ChapterReader {
   static List<EpubChapterRef> getChapters(EpubBookRef bookRef) {
@@ -40,15 +37,14 @@ class ChapterReader {
       }
       final navPoint = navigationPoints.cast<EpubNavigationPoint?>().firstWhere(
             (element) =>
-                element!.Content!.Source!.toLowerCase() ==
-                manifestItem.Href!.toLowerCase(),
+                element!.Content!.Source!.split('/').last.toLowerCase() ==
+                manifestItem.Href!.split('/').last.toLowerCase(),
             orElse: () => null,
           );
       if (navPoint != null) {
         lastTopLevelChapter = navigationPointToChapter(
           bookRef,
           navPoint,
-          package,
         );
         if (lastTopLevelChapter != null) {
           lastNavPoint = navPoint;
@@ -59,15 +55,14 @@ class ChapterReader {
       if (lastNavPoint != null) {
         var found = false;
         for (var childNavPoint in lastNavPoint.ChildNavigationPoints!) {
-          if (childNavPoint.Content!.Source!.toLowerCase() ==
-              manifestItem.Href!.toLowerCase()) {
+          if (childNavPoint.Content!.Source!.split('/').last.toLowerCase() ==
+              manifestItem.Href!.split('/').last.toLowerCase()) {
             final subChapter = navigationPointToChapter(
               bookRef,
               childNavPoint,
-              package,
             );
             if (subChapter != null) {
-              lastTopLevelChapter!.SubChapters!.add(subChapter);
+              lastTopLevelChapter!.SubChapters.add(subChapter);
               found = true;
               break;
             }
@@ -85,16 +80,16 @@ class ChapterReader {
       point.NavigationLabels!.add(EpubNavigationLabel()
         ..Text = lastTopLevelChapter != null ? 'Untitled Chapter' : 'Begining');
       point.ChildNavigationPoints = <EpubNavigationPoint>[];
-      final subChapter = navigationPointToChapter(
+      final chapterFragment = navigationPointToChapter(
         bookRef,
         point,
-        package,
       );
-      if (lastTopLevelChapter != null) {
-        lastTopLevelChapter.SubChapters!.add(subChapter!);
-      } else {
-        result.add(subChapter!);
-        lastTopLevelChapter = subChapter;
+      if (lastTopLevelChapter != null && chapterFragment != null) {
+        lastTopLevelChapter.OtherChapterFragments.add(
+            chapterFragment.epubTextContentFileRef);
+      } else if (chapterFragment != null) {
+        result.add(chapterFragment);
+        lastTopLevelChapter = chapterFragment;
       }
     }
     return result;
@@ -103,7 +98,6 @@ class ChapterReader {
   static EpubChapterRef? navigationPointToChapter(
     EpubBookRef bookRef,
     EpubNavigationPoint navigationPoint,
-    EpubPackage package,
   ) {
     String? contentFileName;
     String? anchor;
@@ -129,35 +123,13 @@ class ChapterReader {
     }
 
     htmlContentFileRef = bookRef.Content!.Html![contentFileName];
+    if (htmlContentFileRef == null) {
+      return null;
+    }
     var chapterRef = EpubChapterRef(htmlContentFileRef);
     chapterRef.ContentFileName = contentFileName;
     chapterRef.Anchor = anchor;
     chapterRef.Title = navigationPoint.NavigationLabels!.first.Text;
-    chapterRef.SubChapters = [];
-
-    // for (var childNavigationPoint in navigationPoint.ChildNavigationPoints!) {
-    //   final subChapter = navigationPointToChapter(
-    //     bookRef,
-    //     childNavigationPoint,
-    //     package,
-    //   );
-    //   if (subChapter != null) {
-    //     chapterRef.SubChapters!.add(subChapter);
-    //   }
-    // }
     return chapterRef;
-  }
-
-  static List<String> getAllNavigationFileNames(
-      List<EpubNavigationPoint> points) {
-    var result = <String>[];
-    for (var point in points) {
-      if (point.Content?.Source != null) {
-        result.add(point.Content!.Source!);
-      }
-      result
-          .addAll(getAllNavigationFileNames(point.ChildNavigationPoints ?? []));
-    }
-    return result;
   }
 }
