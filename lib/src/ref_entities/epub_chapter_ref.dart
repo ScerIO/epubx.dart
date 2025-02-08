@@ -15,8 +15,6 @@ class EpubChapterRef {
   String? ContentFileName;
   String? Anchor;
   List<EpubChapterRef>? SubChapters;
-  // If the chapter is split into multiple files, this list contains the names of the other files.
-  List<String> OtherContentFileNames = [];
 
   EpubChapterRef(EpubTextContentFileRef? epubTextContentFileRef) {
     this.epubTextContentFileRef = epubTextContentFileRef;
@@ -27,7 +25,6 @@ class EpubChapterRef {
     var objects = [
       Title.hashCode,
       ContentFileName.hashCode,
-      OtherContentFileNames.hashCode,
       Anchor.hashCode,
       epubTextContentFileRef.hashCode,
       otherTextContentFileRefs.hashCode,
@@ -43,7 +40,6 @@ class EpubChapterRef {
     }
     return Title == other.Title &&
         ContentFileName == other.ContentFileName &&
-        OtherContentFileNames == other.OtherContentFileNames &&
         Anchor == other.Anchor &&
         epubTextContentFileRef == other.epubTextContentFileRef &&
         otherTextContentFileRefs == other.otherTextContentFileRefs &&
@@ -51,18 +47,7 @@ class EpubChapterRef {
   }
 
   Future<String> readHtmlContent() async {
-    var contentFuture = epubTextContentFileRef!.readContentAsText();
-    if (OtherContentFileNames.isNotEmpty) {
-      var allContentFutures = <Future<String>>[contentFuture];
-      for (var otherContentFileRef in otherTextContentFileRefs) {
-        allContentFutures.add(otherContentFileRef.readContentAsText());
-      }
-      return Future.wait(allContentFutures).then((List<String> contents) {
-        return contents.join('');
-      });
-    } else {
-      return contentFuture;
-    }
+    return epubTextContentFileRef!.readContentAsText();
   }
 
   @override

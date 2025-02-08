@@ -400,7 +400,7 @@ class PackageReader {
         spineItemRef.IdRef = idRefAttribute;
         var linearAttribute = spineItemNode.getAttribute('linear');
         spineItemRef.IsLinear =
-            linearAttribute == null || (linearAttribute.toLowerCase() == 'no');
+            linearAttribute == null || (linearAttribute.toLowerCase() != 'no');
         result.Items!.add(spineItemRef);
       }
     });

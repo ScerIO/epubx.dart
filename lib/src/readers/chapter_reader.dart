@@ -1,3 +1,4 @@
+import 'package:epubx/epubx.dart';
 import 'package:epubx/src/utils/file_name_decoder.dart';
 
 import '../ref_entities/epub_book_ref.dart';
@@ -11,61 +12,140 @@ class ChapterReader {
       return <EpubChapterRef>[];
     }
     var navigationPoints = bookRef.Schema!.Navigation!.NavMap!.Points!;
-    var navigationFileNames = getAllNavigationFileNames(navigationPoints);
-    var unmappedChapters = getUnmappedChapters(bookRef, navigationFileNames);
-    var hasChapterSplittingIntoFiles =
-        hasChapterSplittingInFiles(navigationFileNames);
-    return getChaptersImpl(bookRef, navigationPoints, unmappedChapters,
-        hasChapterSplittingIntoFiles);
+    return getChaptersImpl(bookRef, navigationPoints, bookRef.Schema!.Package!);
   }
 
   static List<EpubChapterRef> getChaptersImpl(
     EpubBookRef bookRef,
     List<EpubNavigationPoint> navigationPoints,
-    List<String> unmappedChapters,
-    bool hasChapterSplittingIntoFiles,
+    EpubPackage package,
   ) {
     var result = <EpubChapterRef>[];
-    for (var navigationPoint in navigationPoints) {
-      String? contentFileName;
-      String? anchor;
-      if (navigationPoint.Content?.Source == null) continue;
-      var contentSourceAnchorCharIndex =
-          navigationPoint.Content!.Source!.indexOf('#');
-      if (contentSourceAnchorCharIndex == -1) {
-        contentFileName = navigationPoint.Content!.Source;
-        anchor = null;
-      } else {
-        contentFileName = navigationPoint.Content!.Source!
-            .substring(0, contentSourceAnchorCharIndex);
-        anchor = navigationPoint.Content!.Source!
-            .substring(contentSourceAnchorCharIndex + 1);
-      }
-      contentFileName = decodeFileName(contentFileName!);
-      EpubTextContentFileRef? htmlContentFileRef;
-      if (!bookRef.Content!.Html!.containsKey(contentFileName)) {
-        throw Exception(
-            'Incorrect EPUB manifest: item with href = \"$contentFileName\" is missing.');
-      }
+    final spineItems = package.Spine!.Items!;
+    final manifestItems = package.Manifest!.Items!;
 
-      htmlContentFileRef = bookRef.Content!.Html![contentFileName];
-      var chapterRef = EpubChapterRef(htmlContentFileRef);
-      chapterRef.ContentFileName = contentFileName;
-      chapterRef.Anchor = anchor;
-      chapterRef.Title = navigationPoint.NavigationLabels!.first.Text;
-      chapterRef.SubChapters = getChaptersImpl(
+    EpubChapterRef? lastTopLevelChapter;
+    EpubNavigationPoint? lastNavPoint;
+    for (var i = 0; i < spineItems.length; i++) {
+      if (spineItems[i].IsLinear != null && !spineItems[i].IsLinear!) {
+        continue;
+      }
+      final idRef = spineItems[i].IdRef!;
+      final manifestItem = manifestItems.cast<EpubManifestItem?>().firstWhere(
+            (element) => element?.Id?.toLowerCase() == idRef.toLowerCase(),
+            orElse: () => null,
+          );
+      if (manifestItem == null) {
+        continue;
+      }
+      final navPoint = navigationPoints.cast<EpubNavigationPoint?>().firstWhere(
+            (element) =>
+                element!.Content!.Source!.toLowerCase() ==
+                manifestItem.Href!.toLowerCase(),
+            orElse: () => null,
+          );
+      if (navPoint != null) {
+        lastTopLevelChapter = navigationPointToChapter(
           bookRef,
-          navigationPoint.ChildNavigationPoints!,
-          unmappedChapters,
-          hasChapterSplittingIntoFiles);
-      if (hasChapterSplittingIntoFiles) {
-        addSplitChaptersToRef(bookRef, chapterRef, unmappedChapters);
+          navPoint,
+          package,
+        );
+        if (lastTopLevelChapter != null) {
+          lastNavPoint = navPoint;
+          result.add(lastTopLevelChapter);
+        }
+        continue;
       }
-
-      result.add(chapterRef);
+      if (lastNavPoint != null) {
+        var found = false;
+        for (var childNavPoint in lastNavPoint.ChildNavigationPoints!) {
+          if (childNavPoint.Content!.Source!.toLowerCase() ==
+              manifestItem.Href!.toLowerCase()) {
+            final subChapter = navigationPointToChapter(
+              bookRef,
+              childNavPoint,
+              package,
+            );
+            if (subChapter != null) {
+              lastTopLevelChapter!.SubChapters!.add(subChapter);
+              found = true;
+              break;
+            }
+          }
+        }
+        if (found) {
+          continue;
+        }
+      }
+      final point = EpubNavigationPoint();
+      point.Content = EpubNavigationContent();
+      point.Content!.Source = manifestItem.Href;
+      point.Id = manifestItem.Id;
+      point.NavigationLabels = <EpubNavigationLabel>[];
+      point.NavigationLabels!.add(EpubNavigationLabel()
+        ..Text = lastTopLevelChapter != null ? 'Untitled Chapter' : 'Begining');
+      point.ChildNavigationPoints = <EpubNavigationPoint>[];
+      final subChapter = navigationPointToChapter(
+        bookRef,
+        point,
+        package,
+      );
+      if (lastTopLevelChapter != null) {
+        lastTopLevelChapter.SubChapters!.add(subChapter!);
+      } else {
+        result.add(subChapter!);
+        lastTopLevelChapter = subChapter;
+      }
     }
-    ;
     return result;
+  }
+
+  static EpubChapterRef? navigationPointToChapter(
+    EpubBookRef bookRef,
+    EpubNavigationPoint navigationPoint,
+    EpubPackage package,
+  ) {
+    String? contentFileName;
+    String? anchor;
+    if (navigationPoint.Content?.Source == null) {
+      return null;
+    }
+    var contentSourceAnchorCharIndex =
+        navigationPoint.Content!.Source!.indexOf('#');
+    if (contentSourceAnchorCharIndex == -1) {
+      contentFileName = navigationPoint.Content!.Source;
+      anchor = null;
+    } else {
+      contentFileName = navigationPoint.Content!.Source!
+          .substring(0, contentSourceAnchorCharIndex);
+      anchor = navigationPoint.Content!.Source!
+          .substring(contentSourceAnchorCharIndex + 1);
+    }
+    contentFileName = decodeFileName(contentFileName!);
+    EpubTextContentFileRef? htmlContentFileRef;
+    if (!bookRef.Content!.Html!.containsKey(contentFileName)) {
+      throw Exception(
+          'Incorrect EPUB manifest: item with href = \"$contentFileName\" is missing.');
+    }
+
+    htmlContentFileRef = bookRef.Content!.Html![contentFileName];
+    var chapterRef = EpubChapterRef(htmlContentFileRef);
+    chapterRef.ContentFileName = contentFileName;
+    chapterRef.Anchor = anchor;
+    chapterRef.Title = navigationPoint.NavigationLabels!.first.Text;
+    chapterRef.SubChapters = [];
+
+    // for (var childNavigationPoint in navigationPoint.ChildNavigationPoints!) {
+    //   final subChapter = navigationPointToChapter(
+    //     bookRef,
+    //     childNavigationPoint,
+    //     package,
+    //   );
+    //   if (subChapter != null) {
+    //     chapterRef.SubChapters!.add(subChapter);
+    //   }
+    // }
+    return chapterRef;
   }
 
   static List<String> getAllNavigationFileNames(
@@ -79,56 +159,5 @@ class ChapterReader {
           .addAll(getAllNavigationFileNames(point.ChildNavigationPoints ?? []));
     }
     return result;
-  }
-
-  /// Sometimes chapters are split into multiple files,
-  /// but the split files are not listed in the navigation.
-  /// We need to find these files and add them to the chapter as [OtherContentFileNames].
-  static List<String> getUnmappedChapters(
-      EpubBookRef bookRef, List<String> navigationFileNames) {
-    var allFileNames = Set<String>.from(bookRef.Content!.Html!.keys);
-    return allFileNames.difference(navigationFileNames.toSet()).toList();
-  }
-
-  /// This checks if the chapters are split into multiple files by
-  /// 1. Checking if the file names contain "_split_".
-  /// 2. Two chapters listed in the navigation file should not have the same file name part before "_split_".
-  static bool hasChapterSplittingInFiles(List<String> navigationFileNames) {
-    var uniqueFileNameParts = <String>{};
-    for (var fileName in navigationFileNames) {
-      if (fileName.contains('_split_')) {
-        var baseName = fileName.split('_split_')[0];
-        if (uniqueFileNameParts.contains(baseName)) {
-          return false;
-        }
-        uniqueFileNameParts.add(baseName);
-      }
-    }
-    return uniqueFileNameParts.isNotEmpty;
-  }
-
-  static void addSplitChaptersToRef(
-    EpubBookRef bookRef,
-    EpubChapterRef chapterRef,
-    List<String> unmappedChapters,
-  ) {
-    if (!chapterRef.ContentFileName!.contains('_split_')) {
-      return;
-    }
-
-    var baseName = chapterRef.ContentFileName!.split('_split_')[0];
-    var addedChapters = <String>[]; // List to store items for removal
-
-    for (var fileName in unmappedChapters) {
-      if (fileName.contains('${baseName}_split') &&
-          fileName != chapterRef.ContentFileName) {
-        chapterRef.otherTextContentFileRefs
-            .add(bookRef.Content!.Html![fileName]!);
-        chapterRef.OtherContentFileNames.add(fileName);
-        addedChapters.add(fileName); // Add to removal list
-      }
-    }
-    unmappedChapters
-        .removeWhere((fileName) => addedChapters.contains(fileName));
   }
 }
