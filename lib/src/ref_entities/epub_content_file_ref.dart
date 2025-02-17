@@ -4,6 +4,7 @@ import 'dart:typed_data';
 
 import 'package:archive/archive.dart';
 import 'package:collection/collection.dart' show IterableExtension;
+import 'package:epubx/src/ref_entities/file_not_found_exception.dart';
 import 'package:quiver/core.dart';
 
 import '../entities/epub_content_type.dart';
@@ -43,7 +44,7 @@ abstract class EpubContentFileRef {
         .files
         .firstWhereOrNull((ArchiveFile x) => x.name == contentFilePath);
     if (contentFileEntry == null) {
-      throw Exception(
+      throw FileNotFoundException(
           'EPUB parsing error: file $contentFilePath not found in archive.');
     }
     return contentFileEntry;
@@ -54,13 +55,11 @@ abstract class EpubContentFileRef {
   }
 
   List<int> openContentStream(ArchiveFile contentFileEntry) {
-    var contentStream = <int>[];
     if (contentFileEntry.content == null) {
       throw Exception(
           'Incorrect EPUB file: content file \"$FileName\" specified in manifest is not found.');
     }
-    contentStream.addAll(contentFileEntry.content);
-    return contentStream;
+    return contentFileEntry.content;
   }
 
   Future<Uint8List> readContentAsBytes() async {
